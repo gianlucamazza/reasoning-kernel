@@ -47,9 +47,16 @@ def _navigate(value: Any, path: str) -> Any:
     cur = value
     for part in path.split("."):
         if isinstance(cur, BaseModel):
+            if part not in type(cur).model_fields:
+                raise ValueError(
+                    f"path {path!r}: {type(cur).__name__} has no field {part!r} "
+                    f"(available: {', '.join(type(cur).model_fields)})"
+                )
             cur = getattr(cur, part)
         elif isinstance(cur, dict):
+            if part not in cur:
+                raise ValueError(f"path {path!r}: key {part!r} not in dict")
             cur = cur[part]
         else:
-            raise TypeError(f"cannot navigate path {path!r}: {type(cur).__name__} has no {part!r}")
+            raise ValueError(f"path {path!r}: {type(cur).__name__} has no {part!r}")
     return cur

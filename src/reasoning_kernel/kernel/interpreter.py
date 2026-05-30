@@ -50,7 +50,7 @@ class Interpreter:
         self._q_schemas = q_schemas
 
     def run(self, ctx: RunContext) -> RunTrace:
-        prompt = build_planner_context(ctx.query, self._dispatcher.catalog())
+        prompt = build_planner_context(ctx.query, self._dispatcher.catalog(), self._q_schemas)
         plan = self._planner.plan(prompt, run_id=ctx.run_id)
         self._trace.emit(PlanEmitted(run_id=ctx.run_id, plan=plan))
 
@@ -76,7 +76,14 @@ class Interpreter:
             )
         if isinstance(step, QuarantineParseStep):
             src = self._store.resolve(step.source)
-            schema = self._q_schemas[step.schema_ref]
+            # Tolerate a model echoing field hints, e.g. "EmailSummary(text)" -> "EmailSummary".
+            ref = step.schema_ref.split("(")[0].strip()
+            if ref not in self._q_schemas:
+                raise ValueError(
+                    f"unknown q_parse schema_ref {step.schema_ref!r} "
+                    f"(available: {', '.join(self._q_schemas)})"
+                )
+            schema = self._q_schemas[ref]
             q_prompt = build_quarantine_context(str(src.value), step.instruction)
             parsed = self._quarantine.parse_blob(prompt=q_prompt, schema=schema)
             label = quarantine_label(src.label)

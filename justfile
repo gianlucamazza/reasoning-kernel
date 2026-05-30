@@ -22,6 +22,10 @@ test *args:
 test-live:
     uv run pytest -m live
 
-# run the worked demo (legit run succeeds, injection is blocked)
+# run the worked demo with the deterministic FakeProvider (no keys needed)
 demo:
     uv run python -m reasoning_kernel.demo.email_exfil
+
+# run the demo end-to-end against a REAL provider (needs a key in .env)
+demo-live:
+    uv run python -m reasoning_kernel.demo.live_run

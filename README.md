@@ -55,10 +55,11 @@ Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible), plus a dete
 
 ```bash
 uv sync --extra dev
-just demo        # legit send commits; injection inert; exfiltration BLOCKED
+just demo        # FakeProvider: legit send commits; injection inert; exfiltration BLOCKED
 just test        # key-free suite incl. the conformance + blocking proofs
 just lint && just typecheck
-just test-live   # optional: real Anthropic/OpenAI/Deepseek (needs API keys)
+just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
+just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
 ```
 
 ## Honest limits
