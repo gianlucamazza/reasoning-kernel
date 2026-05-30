@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reasoning-kernel"
+version = "0.1.0"
+description = "Reference implementation of the Reasoning Kernel pattern (strong / CaMeL-like form)"
+authors = [{ name = "Gianluca Mazza — Venere Labs" }]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = [
+  "llm",
+  "agents",
+  "security",
+  "prompt-injection",
+  "capabilities",
+  "architecture-pattern",
+]
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.7", "pydantic-settings>=2.0"]
+
+[project.optional-dependencies]
+providers = ["anthropic>=0.40", "openai>=1.50"]
+dev = ["pytest>=8.0", "ruff>=0.9", "pyright>=1.1.380"]
+
+[project.scripts]
+reasoning-kernel-demo = "reasoning_kernel.demo.email_exfil:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reasoning_kernel"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["B008"]                                 # function calls in default args (common in Pydantic)
+
+[tool.pyright]
+include = ["src/reasoning_kernel"]
+pythonVersion = "3.12"
+strict = [
+  "src/reasoning_kernel/schemas",
+] # contract layer is strict; integrations basic
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-m 'not live'"
+markers = [
+  "live: tests that call real provider APIs (require API keys; excluded by default)",
+]
