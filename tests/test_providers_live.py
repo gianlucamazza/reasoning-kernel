@@ -1,35 +1,36 @@
 """Live multi-provider round-trips (excluded by default; require API keys).
 
-Run with: ``uv run pytest -m live``. Each provider must return a schema-valid Plan through the
-single Reasoner interface — the fungibility corollary, exercised against real APIs.
+Run with ``just test-live`` or ``uv run pytest -m live``. Each provider must return a schema-valid
+Plan through the single Reasoner interface — the fungibility corollary, exercised against real APIs.
+A provider is skipped when its key is not configured (via env or ``.env``); set keys in ``.env``.
 """
 
 from __future__ import annotations
 
-import os
-
 import pytest
 
+from reasoning_kernel.config import settings
 from reasoning_kernel.reasoner.factory import default_model_for, get_llm_provider
 from reasoning_kernel.reasoner.parse import call_structured
 from reasoning_kernel.schemas.plan import Plan
 
 pytestmark = pytest.mark.live
 
-_PROVIDER_KEYS = {
-    "anthropic": "ANTHROPIC_API_KEY",
-    "openai": "OPENAI_API_KEY",
-    "deepseek": "DEEPSEEK_API_KEY",
+# Read from the loaded configuration (which sources .env), not just os.environ, so the live
+# tests run identically under `just test-live` and a plain `uv run pytest -m live`.
+_PROVIDER_SECRETS = {
+    "anthropic": settings.anthropic_api_key,
+    "openai": settings.openai_api_key,
+    "deepseek": settings.deepseek_api_key,
 }
 
 _PROMPT = "Emit a Plan with run_id 'live', a single ConstStep id='a' value='hello', and final='a'."
 
 
-@pytest.mark.parametrize("provider_name", list(_PROVIDER_KEYS))
+@pytest.mark.parametrize("provider_name", list(_PROVIDER_SECRETS))
 def test_provider_returns_valid_plan(provider_name: str) -> None:
-    env_key = _PROVIDER_KEYS[provider_name]
-    if not os.environ.get(env_key):
-        pytest.skip(f"{env_key} not set")
+    if not _PROVIDER_SECRETS[provider_name].get_secret_value():
+        pytest.skip(f"{provider_name} key not configured")
     provider = get_llm_provider(provider_name)
     plan = call_structured(
         provider, _PROMPT, Plan, model=default_model_for(provider_name), max_tokens=1024
