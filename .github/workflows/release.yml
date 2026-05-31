@@ -1,0 +1,31 @@
+name: Release
+
+# Publish to TestPyPI on a version tag, via PyPI trusted publishing (OIDC — no stored token).
+# Requires a pending publisher configured on https://test.pypi.org for this repo + workflow +
+# the `testpypi` environment. Without it the publish step fails cleanly with no effect.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  testpypi:
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write # mint the OIDC token trusted publishing exchanges for an upload
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
