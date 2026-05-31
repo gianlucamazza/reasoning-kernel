@@ -103,6 +103,47 @@ See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the quality bar (coverage g
 pre-commit) and how to configure provider keys. Release notes are in
 [`CHANGELOG.md`](CHANGELOG.md); vulnerability reporting and scope in [`SECURITY.md`](SECURITY.md).
 
+## Embedding the kernel
+
+There is no facade: you wire the parts explicitly, which is the point — every trusted seam is visible.
+The package root re-exports the building blocks. Sketch (see
+[`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):
+
+```python
+from pydantic import BaseModel
+from reasoning_kernel import (
+    Capability, CapabilitySet, EffectDispatcher, EffectLevel, FakeProvider, Gate, Interpreter,
+    PLLM, QLLM, RunContext, RunId, ToolRegistry, ToolSpec, TraceWriter, TrustedQuery, VerifierVerdict,
+)
+
+# 1. Tools: the callable lives ONLY in the registry, never reachable by the interpreter.
+class SendIn(BaseModel): to: str; body: str
+class SendOut(BaseModel): ok: bool
+
+def send(inp: BaseModel) -> BaseModel: ...  # your real side effect
+registry = ToolRegistry()
+registry.register(ToolSpec(name="send", input_schema=SendIn, output_schema=SendOut,
+    required_caps=frozenset({Capability(name="mail.send")}), effect_level=EffectLevel.WRITE), send)
+
+# 2. Your deterministic declassification policy — the one place trust is relaxed.
+class Policy:
+    def may_declassify(self, tool, named_args, ctx) -> VerifierVerdict:
+        return VerifierVerdict(allowed=False, reason="deny tainted writes by default")
+
+grant = CapabilitySet(granted=frozenset({Capability(name="mail.send")}))
+ctx = RunContext(run_id=RunId("run-1"), user="me@example.com", query=TrustedQuery(text="…your task…"))
+trace = TraceWriter(ctx.run_id)
+dispatcher = EffectDispatcher(registry, Gate(grant, Policy()), trace, ctx)
+
+provider = FakeProvider({})          # swap for get_llm_provider() with a key in .env
+kernel = Interpreter(planner=PLLM(provider, grant=grant), quarantine=QLLM(provider),
+                     dispatcher=dispatcher, trace=trace, q_schemas={})
+result = kernel.run(ctx)             # RunResult(trace, committed); committed is None if it failed closed
+```
+
+**Status**: pre-1.0 — the public API may change between minor versions until 1.0. Pinned releases are
+published to [TestPyPI](https://test.pypi.org/project/reasoning-kernel/).
+
 ## What the kernel enforces
 
 - **Provenance is multi-dimensional**: a `ProvenanceLabel` carries *origin* (`sources`), *where it may
@@ -173,3 +214,7 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 CaMeL — Debenedetti et al., *Defeating Prompt Injections by Design*, 2025
 ([arXiv:2503.18813](https://arxiv.org/abs/2503.18813)). Section references (e.g. §5.4, §6.2) point to it.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
