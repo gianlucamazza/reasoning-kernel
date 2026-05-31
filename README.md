@@ -69,7 +69,8 @@ just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs A
 ```
 
 See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the quality bar (coverage gate, strict typing,
-pre-commit) and how to configure provider keys.
+pre-commit) and how to configure provider keys. Release notes are in
+[`CHANGELOG.md`](CHANGELOG.md); vulnerability reporting and scope in [`SECURITY.md`](SECURITY.md).
 
 ## What the kernel enforces
 

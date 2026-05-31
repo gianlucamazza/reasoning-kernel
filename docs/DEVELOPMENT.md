@@ -40,8 +40,10 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 - **pre-commit**: hooks run ruff (+ format), the standard hygiene checks, and `pyright` strict on
   `schemas` + `kernel` + `memory`. Install once with `uv run pre-commit install`.
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on push / PR. The
-live provider job is manual only (`workflow_dispatch`), reading keys from repository secrets.
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
+3.12 + 3.13 matrix on push / PR. The live provider job is manual only (`workflow_dispatch`), reading
+keys from repository secrets. Release notes live in [`CHANGELOG.md`](../CHANGELOG.md); security
+reporting and scope in [`SECURITY.md`](../SECURITY.md).
 
 ## Provider configuration
 
