@@ -16,6 +16,7 @@ Run: ``uv run python -m reasoning_kernel.demo.email_exfil``
 
 from __future__ import annotations
 
+from reasoning_kernel.demo._report import event_line
 from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
@@ -23,6 +24,7 @@ from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.reasoner.fake import FakeProvider
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.ids import RunId, StepId
+from reasoning_kernel.schemas.limits import RunLimits
 from reasoning_kernel.schemas.plan import (
     ArgRef,
     ConstStep,
@@ -116,7 +118,13 @@ def malicious_plan(run_id: RunId) -> Plan:
 
 
 def run_scenario(
-    *, run_id: str, query: str, world: MailWorld, plan: Plan, summary_text: str
+    *,
+    run_id: str,
+    query: str,
+    world: MailWorld,
+    plan: Plan,
+    summary_text: str,
+    limits: RunLimits = RunLimits(),
 ) -> RunTrace:
     """Wire a kernel around scripted reasoners and run it. Returns the audit trace."""
     ctx = RunContext(run_id=RunId(run_id), user=USER_EMAIL, query=TrustedQuery(text=query))
@@ -130,6 +138,7 @@ def run_scenario(
         dispatcher=dispatcher,
         trace=trace,
         q_schemas=Q_SCHEMAS,
+        limits=limits,
     )
     return interpreter.run(ctx).trace
 
@@ -141,11 +150,7 @@ def _committed_sends(trace: RunTrace) -> list[str]:
 def _print_trace(title: str, trace: RunTrace, world: MailWorld) -> None:
     print(f"\n=== {title} ===")
     for e in trace.events:
-        line = f"  [{e.seq:>2}] {e.kind}"
-        tool = getattr(e, "tool", None)
-        if tool is not None:
-            line += f" tool={tool}"
-        print(line)
+        print(event_line(e))
     sent_to = [s.to for s in world.sent]
     print(f"  -> committed effects: {_committed_sends(trace) or 'none'}")
     print(f"  -> emails actually sent to: {sent_to or 'nobody'}")

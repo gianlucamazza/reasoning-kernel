@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from reasoning_kernel.demo._report import event_line
 from reasoning_kernel.demo.email_exfil import CLEAN_BODY, INJECTED_BODY, USER_EMAIL, make_world
 from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
@@ -107,11 +108,7 @@ def _run(world: MailWorld, sub: Plan) -> RunTrace:
 def _report(title: str, trace: RunTrace, world: MailWorld) -> None:
     print(f"\n=== {title} ===")
     for e in trace.events:
-        line = f"  [{e.seq:>2}] {e.kind}"
-        tool = getattr(e, "tool", None)
-        if tool is not None:
-            line += f" tool={tool}"
-        print(line)
+        print(event_line(e))
     committed = [e.tool for e in trace.events if isinstance(e, EffectCommitted)]
     blocked = [e.tool for e in trace.events if isinstance(e, EffectBlockedEvent)]
     print(f"  -> committed: {committed or 'none'}; blocked: {blocked or 'none'}")
