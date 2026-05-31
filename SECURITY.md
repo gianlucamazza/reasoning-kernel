@@ -18,12 +18,24 @@ So a "vulnerability" here means a way to make the **kernel itself** commit an ef
 labels should have blocked — i.e. a hole in the mechanism (`kernel/`, `schemas/`, `memory/`), not a
 permissive policy written on top of it.
 
+## Threat model
+
+- **The attacker controls untrusted data** — email bodies, tool outputs, anything a READ tool returns —
+  and can put arbitrary instructions in it.
+- **The attacker does NOT control host-supplied configuration**: the `TrustedQuery` and its label, the
+  capability grants, the tool catalog, the Q-LLM schemas, and the `DeclassPolicy`. These are trusted by
+  assumption (see *the trust boundary is axiomatic* in the README's *Honest limits*).
+- **Trusted computing base**: the deterministic interpreter + gate (`kernel/`), the schemas
+  (`schemas/`), and the value store / trace (`memory/`). No LLM is in the TCB.
+- **Out of scope**: supply-chain compromise, side channels, denial of service beyond `RunLimits`, and a
+  compromised host. The reasoner is assumed possibly-malicious; the host config is assumed correct.
+
 ## Supported versions
 
 | Version | Supported |
 |---------|-----------|
-| `0.2.x` | ✅ |
-| `< 0.2` | ❌ |
+| `0.3.x` | ✅ |
+| `< 0.3` | ❌ |
 
 ## Reporting a vulnerability
 
@@ -35,4 +47,4 @@ Please report privately — do **not** open a public issue for a suspected vulne
 Include a minimal reproduction (a plan + tool/policy setup that commits an effect that should have been
 blocked), the expected vs. actual behavior, and the affected version/commit. Expect an initial
 acknowledgement within a few days. As a single-maintainer reference project there is no formal SLA, but
-mechanism-level issues are taken seriously and will be addressed in a `0.2.x` patch.
+mechanism-level issues are taken seriously and will be addressed in a `0.3.x` patch.

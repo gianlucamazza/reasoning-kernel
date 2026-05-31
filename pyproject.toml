@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reasoning-kernel"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reference implementation of the Reasoning Kernel pattern (strong / CaMeL-like form)"
 authors = [{ name = "Gianluca Mazza — Venere Labs" }]
 license = { text = "MIT" }
