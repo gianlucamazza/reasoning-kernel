@@ -26,6 +26,7 @@ from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.limits import RunLimits
 from reasoning_kernel.schemas.plan import (
     ConstStep,
+    MergeStep,
     PlanStep,
     QuarantineParseStep,
     SubKernelStep,
@@ -163,9 +164,20 @@ class Interpreter:
                 raise _RunAborted(f"effect count exceeds max_effects {self._limits.max_effects}")
             named = {k: self._store.resolve(a) for k, a in step.args.items()}
             return self._dispatcher.dispatch(step.tool, named)
+        if isinstance(step, MergeStep):
+            return self._eval_merge(step, ctx)
         # Only SubKernelStep remains. This is exhaustive over PlanStep: the param type makes pyright
         # error here if a new step kind is added to the union but not handled above.
         return self._eval_subkernel(step, ctx)
+
+    def _eval_merge(self, step: MergeStep, ctx: RunContext) -> TaintedValue:
+        # Combine the named inputs into one dict, labelled with the join of their labels: taint only
+        # ever increases (sources union + DERIVED, readers intersected, subjects union). The
+        # object-level over-approximation is sound — strictly safer than per-field labels.
+        resolved = {k: self._store.resolve(ref) for k, ref in step.inputs.items()}
+        merged: dict[str, object] = {k: tv.value for k, tv in resolved.items()}
+        label = join_labels([tv.label for tv in resolved.values()])
+        return TaintedValue(value=merged, label=label, produced_by=step.id)
 
     def _eval_subkernel(self, step: SubKernelStep, ctx: RunContext) -> TaintedValue:
         if self._limits.max_depth is not None and self._depth + 1 > self._limits.max_depth:

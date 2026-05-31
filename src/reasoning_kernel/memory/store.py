@@ -4,10 +4,11 @@ Holds ``StepId -> TaintedValue``, and resolves a plan ``ArgValue`` (a reference 
 literal) into a ``TaintedValue``. Inline literals are labelled trusted: they come from the plan,
 which the planner produced having seen only the controlled query (Invariant A).
 
-Limit: taint is object-level. Navigating a ``path`` keeps the whole value's label. This is sound
-today because every value is produced by a single step (homogeneous provenance). Field-level labels
-would be needed only once a value-COMBINING step exists (a hypothetical ``MergeStep`` building one
-structure from refs of differing labels); until then one label over-approximates, which is safer.
+Limit: taint is object-level. Navigating a ``path`` keeps the whole value's label. The
+value-combining step (``MergeStep``) labels its result with the *join* of its inputs, so a
+composite of differing provenances carries one label that over-approximates them all — safer than
+per-field labels. Field-level labels (recovering a trusted field from a mixed structure without
+over-tainting it) stay deferred: they buy precision, not soundness, until a use case needs them.
 """
 
 from __future__ import annotations
