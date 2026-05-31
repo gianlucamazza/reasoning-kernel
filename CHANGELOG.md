@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Public top-level API**: `reasoning_kernel` now re-exports the key building blocks and contracts
+  (`Interpreter`, `Gate`, `EffectDispatcher`, `PLLM`/`QLLM`, `ToolRegistry`, `ToolSpec`, `RunContext`,
+  `RunLimits`, the Plan IR, provenance types, …) under `__all__`, so integrators import from the
+  package root. See the README's *Embedding the kernel* section.
+
 ## [0.3.0] - 2026-05-31
 
 A feature release: the value-combining `MergeStep` closes the last deferred item, with sound
