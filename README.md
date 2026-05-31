@@ -62,6 +62,8 @@ just demo        # FakeProvider: legit send commits; injection inert; exfiltrati
 just test        # key-free suite (with coverage) incl. the conformance + blocking proofs
 just lint && just typecheck
 just demo-subkernel  # §5.4: delegate untrusted content to an inner kernel at a reduced grant
+just demo-limits        # termination: RunLimits aborts the run closed before the second effect
+just demo-reasoner-error # fail-closed: a failing reasoner commits nothing (plan_rejected)
 
 uv sync --all-extras           # adds the provider SDKs for the live flows below
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)

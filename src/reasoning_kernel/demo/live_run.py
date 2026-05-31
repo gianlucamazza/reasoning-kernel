@@ -11,6 +11,7 @@ Run: ``uv run python -m reasoning_kernel.demo.live_run``
 
 from __future__ import annotations
 
+from reasoning_kernel.demo._report import event_line
 from reasoning_kernel.demo.email_exfil import (
     CLEAN_BODY,
     INJECTED_BODY,
@@ -25,12 +26,7 @@ from reasoning_kernel.reasoner.factory import default_model_for, get_llm_provide
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.policy import RunContext, TrustedQuery
-from reasoning_kernel.schemas.trace import (
-    EffectBlockedEvent,
-    EffectCommitted,
-    PlanEmitted,
-    RunTrace,
-)
+from reasoning_kernel.schemas.trace import EffectBlockedEvent, EffectCommitted, RunTrace
 from reasoning_kernel.tools.demo_mail import (
     DEMO_GRANT,
     Q_SCHEMAS,
@@ -61,13 +57,7 @@ def run_live(*, run_id: str, query: str, world: MailWorld) -> RunTrace:
 def _report(title: str, trace: RunTrace, world: MailWorld) -> None:
     print(f"\n=== {title} ===")
     for e in trace.events:
-        line = f"  [{e.seq:>2}] {e.kind}"
-        tool = getattr(e, "tool", None)
-        if tool is not None:
-            line += f" tool={tool}"
-        if isinstance(e, PlanEmitted):
-            line += f" steps={[f'{s.kind}:{s.id}' for s in e.plan.steps]}"
-        print(line)
+        print(event_line(e))
     committed = [e.tool for e in trace.events if isinstance(e, EffectCommitted)]
     blocked = [e.tool for e in trace.events if isinstance(e, EffectBlockedEvent)]
     print(f"  -> committed: {committed or 'none'}; blocked: {blocked or 'none'}")

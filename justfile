@@ -33,3 +33,11 @@ demo-live:
 # run the composable sub-kernel demo (delegate untrusted content under a reduced grant)
 demo-subkernel:
     uv run python -m reasoning_kernel.demo.subkernel
+
+# run the termination demo (RunLimits aborts a run closed before it exceeds a bound)
+demo-limits:
+    uv run python -m reasoning_kernel.demo.run_limits
+
+# run the fail-closed demo (a failing reasoner commits nothing — plan_rejected, no effect)
+demo-reasoner-error:
+    uv run python -m reasoning_kernel.demo.reasoner_error
