@@ -22,6 +22,18 @@ class ArgRef(BaseModel):
     ref: StepId
     path: str | None = None  # dotted access into a structured result, e.g. "summary.text"
 
+    @model_validator(mode="after")
+    def _validate_path(self) -> ArgRef:
+        # Reject a malformed path at plan-validation time, not opaquely at navigation time. Only
+        # structural malformation is rejected (empty / leading / trailing / doubled '.'); component
+        # names are left free, since dict payload keys need not be identifiers.
+        if self.path is not None and (self.path == "" or "" in self.path.split(".")):
+            raise ValueError(
+                f"malformed path {self.path!r}: empty component "
+                "(no leading, trailing, or doubled '.')"
+            )
+        return self
+
 
 # An argument is either a reference to a prior step or an inline trusted literal scalar.
 ArgValue = ArgRef | str | int | float | bool | None

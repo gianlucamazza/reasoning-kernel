@@ -94,3 +94,15 @@ def test_subkernel_source_ref_is_forward_only() -> None:
             ],
             final=_sid("d"),
         )
+
+
+def test_well_formed_path_is_accepted() -> None:
+    assert ArgRef(ref=_sid("a"), path="summary.text").path == "summary.text"
+    assert ArgRef(ref=_sid("a")).path is None  # no path is fine
+
+
+@pytest.mark.parametrize("bad", ["", "a..b", ".x", "x.", "."])
+def test_malformed_path_is_rejected_at_validation_time(bad: str) -> None:
+    # A malformed dotted path must fail when the plan is built, not opaquely later at navigation.
+    with pytest.raises(ValidationError, match="malformed path"):
+        ArgRef(ref=_sid("a"), path=bad)
