@@ -7,6 +7,8 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
 
+**[Live site →](https://gianlucamazza.github.io/reasoning-kernel/)**
+
 **The problem.** An LLM agent that reads untrusted data — an email, a web page, a tool result — can be
 hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call
 tools on your behalf. This is a reference implementation of an architecture where such a hijack
