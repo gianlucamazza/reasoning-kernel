@@ -21,7 +21,8 @@ live, by construction; it does not guarantee any particular policy is safe. Conf
 ## Strong form: no trusted reasoner
 
 Following CaMeL (Debenedetti et al., 2025), the kernel contains **no trusted reasoner**. It has two
-reasoners at differentiated privilege, *both untrusted*:
+reasoners at differentiated privilege, *both untrusted* (section references like §5.4 below point to
+that paper):
 
 - **P-LLM** (`reasoner/roles.py:PLLM`) — privileged planner; sees only the controlled query + tool
   catalog; emits a typed `Plan`, never prose or code.
@@ -52,7 +53,9 @@ exercised on demand when its key is set.
    never holds one.
 2. `EffectDispatcher` cannot be constructed without a `Gate`, and `dispatch` checks it
    unconditionally before the callable runs.
-3. `ToolCallStep` is the only effectful step kind, and its only handler routes through the dispatcher.
+3. `ToolCallStep` is the only step kind that invokes a tool callable, and its only handler routes
+   through the dispatcher. The other step kinds (`const`, `q_parse`, `subkernel`, `merge`) produce
+   values, never external effects.
 
 ## Run it
 
@@ -94,8 +97,9 @@ pre-commit) and how to configure provider keys. Release notes are in
   delegates untrusted content to an inner kernel at a **clamped, reduced grant**: an injection in that
   content is confined to what the delegated grant permits, even capabilities the outer kernel holds but
   did not delegate (see `just demo-subkernel`). `RunLimits.max_depth` bounds nesting.
-- **Static, data-independent control flow**: a `Plan` is a forward-only DAG of four step kinds, executed
-  linearly by `kernel/interpreter.py`; a `QuarantineParseStep`'s target schema is fixed at plan time
+- **Static, data-independent control flow**: a `Plan` is a forward-only DAG of five step kinds
+  (`const`, `tool`, `q_parse`, `subkernel`, `merge`), executed linearly by `kernel/interpreter.py`; a
+  `QuarantineParseStep`'s target schema is fixed at plan time
   (`schema_ref`), never chosen on the quarantined value. No branch, loop, or tool selection is
   conditioned on untrusted content — so control-flow leaks of quarantined data are precluded by
   construction, not by policy (the matching cost is in *Honest limits*).
