@@ -91,14 +91,30 @@ pre-commit) and how to configure provider keys. Release notes are in
   delegates untrusted content to an inner kernel at a **clamped, reduced grant**: an injection in that
   content is confined to what the delegated grant permits, even capabilities the outer kernel holds but
   did not delegate (see `just demo-subkernel`). `RunLimits.max_depth` bounds nesting.
+- **Static, data-independent control flow**: a `Plan` is a forward-only DAG of four step kinds, executed
+  linearly by `kernel/interpreter.py`; a `QuarantineParseStep`'s target schema is fixed at plan time
+  (`schema_ref`), never chosen on the quarantined value. No branch, loop, or tool selection is
+  conditioned on untrusted content — so control-flow leaks of quarantined data are precluded by
+  construction, not by policy (the matching cost is in *Honest limits*).
 
 ## Honest limits (fundamental — localized, not dissolved)
 
 - **Conformance ≠ safety**: a pass-through declassifier conforms yet protects nothing. The pattern
   guarantees a topology; the *policy* carries correctness.
-- **Verification stays deterministic**: no LLM-as-judge on the commit path (§6.2); the Q-LLM is untrusted.
+- **Verification determinism is a discipline, not a typed invariant**: the commit path has no
+  LLM-as-judge (§6.2) and the Q-LLM is untrusted — but `DeclassPolicy` is a `Protocol` the Gate calls
+  blindly; nothing in the types forbids an implementation from consulting a model. Determinism is
+  *required of* the declassifier, not *enforced on* it.
+- **The trust boundary is axiomatic**: the kernel's guarantees are conditional on configuration it does
+  not attest. A `TrustedQuery`'s trusted label is *assumed*, not verified; the capability grant, tool
+  catalog, Q-LLM schemas, and `DeclassPolicy` are host-supplied. Conformance protects nothing if that
+  boundary is drawn wrong — the kernel fixes the topology, the host owns the inputs.
 - **The declassifier is the residual risk surface**: every `may_declassify=True` is a deliberate, traced
   trust decision.
+- **No data-dependent control flow (a deliberate trade)**: because the plan is a static DAG (see *What
+  the kernel enforces*), it cannot branch or loop on parsed content — the price of precluding
+  control-flow leaks. An "if the email says X, do Y" must be lifted into a typed value the Gate can
+  inspect, not a runtime branch on quarantined text.
 - **No atomicity / rollback**: an effect already committed is real even if a later step (or the outer run
   of a sub-kernel) fails — same semantics as a flat plan. The shared trace makes the partial commit
   visible; the kernel does not pretend to offer transactions.

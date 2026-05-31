@@ -50,7 +50,11 @@ class VerifierVerdict(BaseModel):
 
 
 class DeclassPolicy(Protocol):
-    """Decides whether tainted arguments may flow into a WRITE effect. Deterministic."""
+    """Decides whether tainted arguments may flow into a WRITE effect.
+
+    Implementations MUST be deterministic and free of LLM calls: the kernel invokes this on
+    the commit path and cannot enforce that contract through the type system.
+    """
 
     def may_declassify(
         self,

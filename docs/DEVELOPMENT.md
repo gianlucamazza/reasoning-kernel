@@ -82,4 +82,6 @@ changing code:
    `EffectDispatcher`, which cannot be built without a `Gate` and checks it before every call. Do not
    give the interpreter a path to a callable.
 2. **The commit path stays deterministic.** No LLM-as-judge on verification (§6.2). Anything that
-   relaxes taint must go through the single, auditable `DeclassPolicy` seam.
+   relaxes taint must go through the single, auditable `DeclassPolicy` seam — and that seam is
+   *required* to be deterministic, a discipline the `Protocol` documents but the type system does not
+   enforce.
