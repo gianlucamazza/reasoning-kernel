@@ -10,6 +10,25 @@
 <meta property="og:title" content="Reasoning Kernel" />
 <meta property="og:description" content="Make prompt injection structurally unable to cause an unauthorized effect — by construction, not by detection." />
 <meta property="og:url" content="https://gianlucamazza.github.io/reasoning-kernel/" />
+<meta property="og:site_name" content="Reasoning Kernel" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Reasoning Kernel" />
+<meta name="twitter:description" content="Make prompt injection structurally unable to cause an unauthorized effect — by construction, not by detection." />
+<meta name="theme-color" content="#0c0c0b" />
+<link rel="canonical" href="https://gianlucamazza.github.io/reasoning-kernel/" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Reasoning Kernel",
+  "description": "A framework-agnostic Python reference implementation of the Reasoning Kernel (CaMeL-like) pattern: an LLM-agent architecture where a prompt injection cannot cause an unauthorized effect — by construction, not by detection.",
+  "codeRepository": "https://github.com/gianlucamazza/reasoning-kernel",
+  "url": "https://gianlucamazza.github.io/reasoning-kernel/",
+  "programmingLanguage": "Python",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": { "@type": "Person", "name": "Gianluca Mazza" }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" />
@@ -48,22 +67,45 @@
   ::selection { background: rgba(180, 95, 67, 0.32); }
   :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 0 28px; }
-  section { padding: 60px 0; border-top: 1px solid var(--border); }
+  section { padding: 60px 0; border-top: 1px solid var(--border); scroll-margin-top: 64px; }
   section:first-of-type { border-top: 0; }
+
+  /* skip link (a11y) */
+  .skip {
+    position: absolute; left: 12px; top: -48px; z-index: 100;
+    background: var(--text); color: var(--bg); padding: 8px 14px;
+    font-family: var(--mono); font-size: 0.82rem; transition: top 0.15s ease;
+  }
+  .skip:focus { top: 12px; color: var(--bg); }
+
+  /* sticky top nav */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(12, 12, 11, 0.82);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .topnav .brand { font-family: var(--mono); font-size: 0.86rem; color: var(--muted); letter-spacing: 0.04em; }
+  .topnav .brand .prompt { color: var(--accent); }
+  .topnav .brand .name { color: var(--text); }
+  .topnav .navlinks { display: flex; gap: 26px; }
+  .topnav .navlinks a {
+    font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted);
+  }
+  .topnav .navlinks a:hover, .topnav .navlinks a.active { color: var(--text); }
+  .topnav .navlinks a.gh { color: var(--accent-bright); }
+  @media (max-width: 760px) {
+    .topnav .navlinks a:not(.gh) { display: none; }
+  }
   h1, h2, h3 { font-weight: 500; line-height: 1.15; letter-spacing: -0.025em; }
   h2 { font-size: 1.7rem; margin: 0 0 10px; }
   .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
   .lede { color: var(--muted); font-size: 1.04rem; margin: 0 0 28px; max-width: 68ch; }
 
   /* hero */
-  .hero { text-align: left; padding: 64px 0 60px; border-top: 0; }
-  .wordmark {
-    display: inline-flex; align-items: baseline; gap: 10px;
-    font-family: var(--mono); font-size: 0.92rem; color: var(--muted);
-    letter-spacing: 0.04em; margin-bottom: 40px;
-  }
-  .wordmark .prompt { color: var(--accent); }
-  .wordmark .name { color: var(--text); }
+  .hero { text-align: left; padding: 60px 0; border-top: 0; }
   .hero h1 {
     font-size: clamp(2.3rem, 6vw, 4rem);
     margin: 0 0 22px; max-width: 16ch;
@@ -173,9 +215,24 @@
 </head>
 <body>
 
-<header class="hero">
+<a class="skip" href="#problem">Skip to content</a>
+
+<nav class="topnav" aria-label="Primary">
   <div class="wrap">
-    <div class="wordmark"><span class="prompt">&gt;_</span> <span class="name">reasoning-kernel</span></div>
+    <a class="brand" href="#top"><span class="prompt">&gt;_</span> <span class="name">reasoning-kernel</span></a>
+    <div class="navlinks">
+      <a href="#problem">Problem</a>
+      <a href="#invariants">Invariants</a>
+      <a href="#flow">Flow</a>
+      <a href="#embedding">Embedding</a>
+      <a href="#limits">Limits</a>
+      <a class="gh" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
     <p class="eyebrow">Prompt-injection defense by construction</p>
     <h1>Make prompt injection <span class="em">structurally</span> unable to cause an unauthorized effect</h1>
     <p class="tag">An LLM-agent architecture where a hijack is inert — by construction, not by detection.</p>
@@ -411,6 +468,24 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
   </div>
 </section>
 
+<section id="get-started">
+  <div class="wrap">
+    <p class="eyebrow">Get started</p>
+    <h2>Read it, fork it, conform to it</h2>
+    <p class="lede">It is a reference implementation and spec — a vetted skeleton, not a turn-key product. Install it, read the worked demo, or conform your own agent to the pattern.</p>
+    <div class="cta">
+      <div class="install">
+        <span class="dollar">$</span>
+        <span id="install-cmd-2">pip install capability-reasoning-kernel</span>
+        <button id="copy-btn-2" type="button" aria-label="Copy install command">Copy</button>
+      </div>
+      <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub →</a>
+      <a class="btn" href="https://pypi.org/project/capability-reasoning-kernel/">PyPI</a>
+      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel#readme">README</a>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer>
@@ -421,6 +496,7 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
       <a href="https://github.com/gianlucamazza/reasoning-kernel#readme">README</a>
       <a href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/CHANGELOG.md">Changelog</a>
       <a href="https://arxiv.org/abs/2503.18813">Paper</a>
+      <a href="https://gianlucamazza.it">gianlucamazza.it ↗</a>
     </div>
     <p class="meta">
       <strong>Status</strong>: pre-1.0 — the public API may change between minor versions until 1.0.<br />
@@ -432,35 +508,61 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
 
 <script>
   (function () {
-    var btn = document.getElementById("copy-btn");
-    var cmd = document.getElementById("install-cmd");
-    if (!btn || !cmd) return;
-    btn.addEventListener("click", function () {
-      var text = cmd.textContent.trim();
-      var done = function () {
-        var prev = btn.textContent;
-        btn.textContent = "Copied";
-        setTimeout(function () { btn.textContent = prev; }, 1600);
-      };
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done, function () {});
-          return;
-        }
-      } catch (e) { /* fall through to legacy path */ }
-      try {
-        var ta = document.createElement("textarea");
-        ta.value = text;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "absolute";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        done();
-      } catch (e) { /* clipboard unavailable; no-op */ }
-    });
+    // Copy-to-clipboard, with a legacy fallback for non-secure contexts.
+    function wireCopy(btnId, cmdId) {
+      var btn = document.getElementById(btnId);
+      var cmd = document.getElementById(cmdId);
+      if (!btn || !cmd) return;
+      btn.addEventListener("click", function () {
+        var text = cmd.textContent.trim();
+        var done = function () {
+          var prev = btn.textContent;
+          btn.textContent = "Copied";
+          setTimeout(function () { btn.textContent = prev; }, 1600);
+        };
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () {});
+            return;
+          }
+        } catch (e) { /* fall through to legacy path */ }
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "absolute";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          done();
+        } catch (e) { /* clipboard unavailable; no-op */ }
+      });
+    }
+    wireCopy("copy-btn", "install-cmd");
+    wireCopy("copy-btn-2", "install-cmd-2");
+
+    // Highlight the nav link for the section currently in view (progressive enhancement).
+    if ("IntersectionObserver" in window) {
+      var links = {};
+      document.querySelectorAll(".topnav .navlinks a[href^='#']").forEach(function (a) {
+        links[a.getAttribute("href").slice(1)] = a;
+      });
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var link = links[entry.target.id];
+          if (link && entry.isIntersecting) {
+            Object.keys(links).forEach(function (k) { links[k].classList.remove("active"); });
+            link.classList.add("active");
+          }
+        });
+      }, { rootMargin: "-50% 0px -50% 0px" });
+      Object.keys(links).forEach(function (id) {
+        var sec = document.getElementById(id);
+        if (sec) observer.observe(sec);
+      });
+    }
   })();
 </script>
 
