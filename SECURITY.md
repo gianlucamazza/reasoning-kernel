@@ -34,8 +34,8 @@ permissive policy written on top of it.
 
 | Version | Supported |
 |---------|-----------|
-| `0.3.x` | ✅ |
-| `< 0.3` | ❌ |
+| `0.4.x` | ✅ |
+| `< 0.4` | ❌ |
 
 ## Reporting a vulnerability
 
@@ -47,4 +47,4 @@ Please report privately — do **not** open a public issue for a suspected vulne
 Include a minimal reproduction (a plan + tool/policy setup that commits an effect that should have been
 blocked), the expected vs. actual behavior, and the affected version/commit. Expect an initial
 acknowledgement within a few days. As a single-maintainer reference project there is no formal SLA, but
-mechanism-level issues are taken seriously and will be addressed in a `0.3.x` patch.
+mechanism-level issues are taken seriously and will be addressed in a `0.4.x` patch.
