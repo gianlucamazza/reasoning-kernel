@@ -1,5 +1,12 @@
 # Reasoning Kernel
 
+[![PyPI](https://img.shields.io/pypi/v/capability-reasoning-kernel)](https://pypi.org/project/capability-reasoning-kernel/)
+[![Python](https://img.shields.io/pypi/pyversions/capability-reasoning-kernel)](https://pypi.org/project/capability-reasoning-kernel/)
+[![CI](https://github.com/gianlucamazza/reasoning-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/gianlucamazza/reasoning-kernel/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/gianlucamazza/reasoning-kernel)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
+
 **The problem.** An LLM agent that reads untrusted data — an email, a web page, a tool result — can be
 hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call
 tools on your behalf. This is a reference implementation of an architecture where such a hijack
