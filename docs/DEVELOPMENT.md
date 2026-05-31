@@ -31,13 +31,14 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
   (`[tool.coverage.report] fail_under` in `pyproject.toml`). The `demo/` package is excluded from the
   measure — it is runnable examples, exercised by `just demo*`, not by the unit suite.
 - **Strict typing on the security-critical layers**: `pyright` runs in `strict` mode over
-  `src/reasoning_kernel/schemas` (the contract layer) and `src/reasoning_kernel/kernel` (the trusted
-  core: interpreter, gate, dispatcher, taint). Provider integrations stay at `basic`. The trusted
-  core is kept free of `Any` leakage — e.g. `TaintedValue.value` is typed `object`, since the kernel
-  never inspects the payload.
+  `src/reasoning_kernel/schemas` (the contract layer), `src/reasoning_kernel/kernel` (the trusted
+  core: interpreter, gate, dispatcher, taint), and `src/reasoning_kernel/memory` (the `ValueStore`
+  that holds tainted values and the append-only `TraceWriter`). Provider integrations stay at
+  `basic`. The trusted core is kept free of `Any` leakage — e.g. `TaintedValue.value` and the
+  `ValueStore` path-navigation are typed `object`, since the kernel never inspects the payload.
 - **No suppressions as a shortcut**: prefer fixing the root cause over `# noqa` / `# type: ignore`.
 - **pre-commit**: hooks run ruff (+ format), the standard hygiene checks, and `pyright` strict on
-  `schemas` + `kernel`. Install once with `uv run pre-commit install`.
+  `schemas` + `kernel` + `memory`. Install once with `uv run pre-commit install`.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on push / PR. The
 live provider job is manual only (`workflow_dispatch`), reading keys from repository secrets.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reasoning-kernel"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reference implementation of the Reasoning Kernel pattern (strong / CaMeL-like form)"
 authors = [{ name = "Gianluca Mazza — Venere Labs" }]
 license = { text = "MIT" }
@@ -17,8 +17,23 @@ keywords = [
   "capabilities",
   "architecture-pattern",
 ]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
 requires-python = ">=3.12"
 dependencies = ["pydantic>=2.7", "pydantic-settings>=2.0"]
+
+[project.urls]
+Homepage = "https://github.com/gianlucamazza/reasoning-kernel"
+Repository = "https://github.com/gianlucamazza/reasoning-kernel"
+Issues = "https://github.com/gianlucamazza/reasoning-kernel/issues"
 
 [project.optional-dependencies]
 # Deepseek needs no separate dep: it is OpenAI-compatible and reuses the `openai` SDK via base_url.
@@ -45,6 +60,7 @@ pythonVersion = "3.12"
 strict = [
   "src/reasoning_kernel/schemas", # contract layer
   "src/reasoning_kernel/kernel",  # the trusted core: interpreter, gate, dispatcher, taint
+  "src/reasoning_kernel/memory",  # trusted core: ValueStore (tainted-value custody) + TraceWriter
 ] # strict on the security-critical layers; integrations stay basic
 
 [tool.pytest.ini_options]

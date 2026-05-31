@@ -12,7 +12,7 @@ structure from refs of differing labels); until then one label over-approximates
 
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel
 
@@ -48,8 +48,8 @@ class ValueStore:
         return TaintedValue(value=arg, label=self._query_label, produced_by=StepId("__literal__"))
 
 
-def _navigate(value: Any, path: str) -> Any:
-    cur = value
+def _navigate(value: object, path: str) -> object:
+    cur: object = value
     for part in path.split("."):
         if isinstance(cur, BaseModel):
             if part not in type(cur).model_fields:
@@ -59,9 +59,11 @@ def _navigate(value: Any, path: str) -> Any:
                 )
             cur = getattr(cur, part)
         elif isinstance(cur, dict):
-            if part not in cur:
+            # The kernel treats payloads as opaque: dict values are navigated as plain ``object``.
+            cur_dict = cast("dict[str, object]", cur)
+            if part not in cur_dict:
                 raise ValueError(f"path {path!r}: key {part!r} not in dict")
-            cur = cur[part]
+            cur = cur_dict[part]
         else:
             raise ValueError(f"path {path!r}: {type(cur).__name__} has no {part!r}")
     return cur
