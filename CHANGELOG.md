@@ -23,10 +23,16 @@ API changes.
 - **Quality bar**: coverage gate at 85% (`pytest-cov`), `pyright` strict over `schemas` + `kernel` +
   `memory`, pre-commit hooks, and GitHub Actions CI (uv + just) running lint / typecheck / covered
   tests on push & PR, with an optional manual live-provider job.
-- **Docs**: `docs/DEVELOPMENT.md` (setup, quality bar, provider configuration) and a typed-library
-  `py.typed` marker.
-- **Robustness tests**: provider-failure fail-closed, prompt timeout abort, and the demo tools failing
-  closed on malformed world state.
+- **Plan IR robustness**: `ArgRef.path` is validated at plan-construction time — a malformed dotted
+  path (empty / leading / trailing / doubled `.`) is rejected with a clear error instead of surfacing
+  opaquely at navigation time.
+- **Docs**: `docs/DEVELOPMENT.md` (setup, quality bar, provider configuration), a typed-library
+  `py.typed` marker, and a complete *Honest limits* section in the README — the trust boundary is
+  axiomatic, control flow is static and data-independent, and verification determinism is a discipline
+  rather than a typed invariant (mirrored in `DEVELOPMENT.md` rule #2 and the `DeclassPolicy` docstring).
+- **Robustness tests**: provider-failure fail-closed, prompt timeout abort, the demo tools failing
+  closed on malformed world state, and key-free coverage of the registry, value store, capability
+  algebra, and the demo declassifier's rejection branches.
 
 ### Changed
 
