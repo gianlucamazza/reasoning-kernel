@@ -132,7 +132,12 @@ Q_SCHEMAS: dict[str, type[BaseModel]] = {"EmailSummary": EmailSummary}
 
 
 class RecipientIsUserPolicy:
-    """Declassify a tainted WRITE only when the recipient is the trusted requesting user."""
+    """Declassify a tainted WRITE only when the recipient is the trusted requesting user.
+
+    Note (limit): this permits self-directed sends of any tainted body — including third-party data
+    mailed to oneself. It blocks exfiltration to third parties, which is the demo's threat model; it
+    is a property of this policy, not of the pattern. A stricter policy would scope by data subject.
+    """
 
     def may_declassify(
         self,

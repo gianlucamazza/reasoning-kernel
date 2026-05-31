@@ -52,19 +52,23 @@ class Gate:
 
         # 3. provenance (only matters for WRITE effects)
         if spec.effect_level >= EffectLevel.WRITE:
-            tainted_into_cap = any(
-                v.label.is_tainted and not v.label.allows_reader(cap)
-                for cap in spec.required_caps
-                for v in named_args.values()
-            )
-            if tainted_into_cap:
-                verdict = self._declass.may_declassify(spec, named_args, ctx)
-                if not verdict.allowed:
-                    return VerifierVerdict(
-                        allowed=False,
-                        reason=f"untrusted-derived data may not flow into {spec.name}",
-                        issues=verdict.issues or [verdict.reason],
-                    )
-                return verdict
+            tainted = [v for v in named_args.values() if v.label.is_tainted]
+            if tainted:
+                # Permitted without declassification ONLY if the tool declares capabilities AND
+                # every tainted arg may flow into all of them. An empty required_caps set is not a
+                # free pass: tainted data into such a WRITE still needs explicit declassification
+                # (otherwise a WRITE tool with no declared capability would silently exfiltrate).
+                permitted = bool(spec.required_caps) and all(
+                    v.label.allows_reader(cap) for cap in spec.required_caps for v in tainted
+                )
+                if not permitted:
+                    verdict = self._declass.may_declassify(spec, named_args, ctx)
+                    if not verdict.allowed:
+                        return VerifierVerdict(
+                            allowed=False,
+                            reason=f"untrusted-derived data may not flow into {spec.name}",
+                            issues=verdict.issues or [verdict.reason],
+                        )
+                    return verdict
 
         return VerifierVerdict(allowed=True, reason=f"{spec.name} permitted")

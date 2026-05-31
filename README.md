@@ -67,3 +67,13 @@ just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs A
 - **Conformance ≠ safety**: a pass-through declassifier conforms yet protects nothing.
 - **Verification stays deterministic**: no LLM-as-judge on the commit path (§6.2).
 - **Provenance is effectiveness, not conformance**: a run without taint tracking still conforms.
+- **Object-level taint**: provenance labels a whole value, not its fields; navigating into a value
+  (`memory/store.py`) keeps the value's label. A value mixing trusted and untrusted fields is
+  labelled by the join — there is no field-level provenance.
+- **The query channel is assumed trusted**: Invariant A holds only if `RunContext.query` is a
+  controlled channel; nothing enforces the query's own provenance.
+- **`const`/inline literals are trusted**: they are labelled trusted because the planner that
+  produced them saw only the controlled query (the CaMeL rationale) — not a hole, by construction.
+- **The demo declassifier permits self-directed sends**: `RecipientIsUserPolicy` lets any tainted
+  body go to the user, including third-party data sent to oneself. That is a property of the demo
+  *policy* (it blocks sends to third parties), not of the pattern.

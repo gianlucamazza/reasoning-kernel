@@ -8,7 +8,7 @@ callable and never calls a model except via the two reasoner roles.
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from reasoning_kernel.context.assembler import build_planner_context, build_quarantine_context
 from reasoning_kernel.kernel.effects import EffectBlocked, EffectDispatcher
@@ -21,14 +21,20 @@ from reasoning_kernel.schemas.policy import RunContext
 from reasoning_kernel.schemas.provenance import ProvenanceLabel
 from reasoning_kernel.schemas.trace import (
     PlanEmitted,
+    PlanRejected,
     QParseResult,
     RunBlocked,
     RunCommitted,
+    RunErrored,
     RunTrace,
     StepStarted,
     digest,
 )
 from reasoning_kernel.schemas.values import TaintedValue
+
+# Errors that mean "the model produced a plan the kernel cannot safely execute". They are
+# failed closed (recorded, no effect committed), not crashes. Unexpected errors still propagate.
+_PLAN_ERRORS = (ValidationError, ValueError, KeyError)
 
 
 class Interpreter:
@@ -51,7 +57,13 @@ class Interpreter:
 
     def run(self, ctx: RunContext) -> RunTrace:
         prompt = build_planner_context(ctx.query, self._dispatcher.catalog(), self._q_schemas)
-        plan = self._planner.plan(prompt, run_id=ctx.run_id)
+
+        # Planning can fail closed: an invalid plan from the model commits nothing and is recorded.
+        try:
+            plan = self._planner.plan(prompt, run_id=ctx.run_id)
+        except _PLAN_ERRORS as exc:
+            self._trace.emit(PlanRejected(run_id=ctx.run_id, reason=str(exc)))
+            return self._trace.snapshot()
         self._trace.emit(PlanEmitted(run_id=ctx.run_id, plan=plan))
 
         for step in plan.steps:
@@ -61,6 +73,10 @@ class Interpreter:
             except EffectBlocked:
                 # The gate denied a commit; the run aborts with the block recorded in the trace.
                 self._trace.emit(RunBlocked(run_id=ctx.run_id, tool=_tool_name(step)))
+                return self._trace.snapshot()
+            except _PLAN_ERRORS as exc:
+                # A bad reference, unknown schema, or invalid path: fail closed, commit nothing.
+                self._trace.emit(RunErrored(run_id=ctx.run_id, step_id=step.id, reason=str(exc)))
                 return self._trace.snapshot()
             self._store.put(step.id, value)
 
@@ -76,14 +92,12 @@ class Interpreter:
             )
         if isinstance(step, QuarantineParseStep):
             src = self._store.resolve(step.source)
-            # Tolerate a model echoing field hints, e.g. "EmailSummary(text)" -> "EmailSummary".
-            ref = step.schema_ref.split("(")[0].strip()
-            if ref not in self._q_schemas:
+            if step.schema_ref not in self._q_schemas:
                 raise ValueError(
                     f"unknown q_parse schema_ref {step.schema_ref!r} "
                     f"(available: {', '.join(self._q_schemas)})"
                 )
-            schema = self._q_schemas[ref]
+            schema = self._q_schemas[step.schema_ref]
             q_prompt = build_quarantine_context(str(src.value), step.instruction)
             parsed = self._quarantine.parse_blob(prompt=q_prompt, schema=schema)
             label = quarantine_label(src.label)

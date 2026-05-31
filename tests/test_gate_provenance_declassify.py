@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
 from conftest import AllowAll, DenyAll, ctx, tainted, trusted
+from pydantic import ValidationError
 
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.schemas.capability import CapabilitySet, EffectLevel
@@ -51,3 +53,32 @@ def test_recipient_is_user_policy_allows_self_blocks_others() -> None:
     to_other = {"to": trusted("attacker@evil.com"), "body": tainted("my own summary")}
     assert gate.check(SEND_SPEC, to_self, ctx()).allowed
     assert not gate.check(SEND_SPEC, to_other, ctx()).allowed
+
+
+def test_write_tool_must_declare_a_capability() -> None:
+    # A WRITE with no required capability is rejected at construction (it would give the provenance
+    # check nothing to reason about). Prevents the footgun at the source.
+    with pytest.raises(ValidationError):
+        ToolSpec(
+            name="leak",
+            input_schema=SendEmailIn,
+            output_schema=SendEmailOut,
+            required_caps=frozenset(),
+            effect_level=EffectLevel.WRITE,
+        )
+
+
+def test_gate_denies_tainted_into_capless_write_defense_in_depth() -> None:
+    # Bypass the construction guard with model_construct to prove the GATE itself does not treat an
+    # empty capability set as a free pass for tainted data into a WRITE.
+    capless_write = ToolSpec.model_construct(
+        name="leak",
+        input_schema=SendEmailIn,
+        output_schema=SendEmailOut,
+        required_caps=frozenset(),
+        effect_level=EffectLevel.WRITE,
+        result_readers=frozenset(),
+    )
+    gate = Gate(CapabilitySet(granted=frozenset()), DenyAll())
+    args = {"to": trusted("attacker@evil.com"), "body": tainted("secret contacts")}
+    assert not gate.check(capless_write, args, ctx()).allowed

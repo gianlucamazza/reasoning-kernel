@@ -3,6 +3,9 @@
 Holds ``StepId -> TaintedValue``, and resolves a plan ``ArgValue`` (a reference or an inline
 literal) into a ``TaintedValue``. Inline literals are labelled trusted: they come from the plan,
 which the planner produced having seen only the controlled query (Invariant A).
+
+Limit: taint is object-level. Navigating a ``path`` into a value keeps that value's label; there is
+no field-level provenance, so a value mixing trusted and untrusted fields carries the joined label.
 """
 
 from __future__ import annotations

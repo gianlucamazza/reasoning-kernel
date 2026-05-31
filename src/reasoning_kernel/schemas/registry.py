@@ -11,7 +11,7 @@ layer — so the contract can be inspected and reasoned about without holding th
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from reasoning_kernel.schemas.capability import Capability, EffectLevel
 
@@ -27,3 +27,13 @@ class ToolSpec(BaseModel):
     required_caps: frozenset[Capability]
     effect_level: EffectLevel
     result_readers: frozenset[Capability] = frozenset()
+
+    @model_validator(mode="after")
+    def _write_must_declare_capability(self) -> ToolSpec:
+        # A world-mutating effect must be gated by at least one capability; otherwise the
+        # provenance check would have no capability to reason about (see kernel/gate.py).
+        if self.effect_level >= EffectLevel.WRITE and not self.required_caps:
+            raise ValueError(
+                f"WRITE tool {self.name!r} must declare at least one required capability"
+            )
+        return self

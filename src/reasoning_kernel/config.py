@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     llm_provider_default: str = "anthropic"  # "anthropic" | "openai" | "deepseek" | "fake"
     llm_model_anthropic: str = "claude-sonnet-4-6"
-    llm_model_openai: str = "gpt-4.1"
+    llm_model_openai: str = "gpt-5.5"
     llm_model_deepseek: str = "deepseek-chat"
     deepseek_base_url: str = "https://api.deepseek.com"
 

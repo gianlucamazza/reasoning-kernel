@@ -76,6 +76,17 @@ class RunBlocked(TraceEvent):
     tool: str
 
 
+class PlanRejected(TraceEvent):
+    kind: str = "plan_rejected"
+    reason: str
+
+
+class RunErrored(TraceEvent):
+    kind: str = "run_errored"
+    step_id: StepId | None = None
+    reason: str
+
+
 class RunTrace(BaseModel):
     """An immutable snapshot of a run's event log."""
 
