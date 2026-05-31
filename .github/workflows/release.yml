@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
+      contents: read # required so actions/checkout can clone this private repo
       id-token: write # mint the OIDC token trusted publishing exchanges for an upload
     steps:
       - uses: actions/checkout@v5
