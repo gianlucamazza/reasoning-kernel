@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-05-31
+
+### Changed
+
+- **PyPI distribution name** is now `capability-reasoning-kernel` (the import stays `reasoning_kernel`,
+  and the repository stays `reasoning-kernel`): `reasoning-kernel` is taken on PyPI by an unrelated
+  project. Released on real PyPI in addition to TestPyPI.
+
 ## [0.4.0] - 2026-05-31
 
 A minor release: a discoverable public API at the package root, with an "Embedding the kernel" snippet,
@@ -87,6 +95,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.4.1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.1
 [0.4.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.0
 [0.3.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.3.0
 [0.2.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.2.0

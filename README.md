@@ -105,6 +105,9 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 ## Embedding the kernel
 
+Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
+(the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
+
 There is no facade: you wire the parts explicitly, which is the point — every trusted seam is visible.
 The package root re-exports the building blocks. Sketch (see
 [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):
@@ -141,8 +144,9 @@ kernel = Interpreter(planner=PLLM(provider, grant=grant), quarantine=QLLM(provid
 result = kernel.run(ctx)             # RunResult(trace, committed); committed is None if it failed closed
 ```
 
-**Status**: pre-1.0 — the public API may change between minor versions until 1.0. Pinned releases are
-published to [TestPyPI](https://test.pypi.org/project/reasoning-kernel/).
+**Status**: pre-1.0 — the public API may change between minor versions until 1.0. Released on
+[PyPI](https://pypi.org/project/capability-reasoning-kernel/) as `capability-reasoning-kernel`
+(imports as `reasoning_kernel`), and on TestPyPI.
 
 ## What the kernel enforces
 
