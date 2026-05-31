@@ -19,7 +19,6 @@ from __future__ import annotations
 from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
-from reasoning_kernel.memory.store import ValueStore
 from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.reasoner.fake import FakeProvider
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
@@ -31,7 +30,7 @@ from reasoning_kernel.schemas.plan import (
     QuarantineParseStep,
     ToolCallStep,
 )
-from reasoning_kernel.schemas.policy import RunContext
+from reasoning_kernel.schemas.policy import RunContext, TrustedQuery
 from reasoning_kernel.schemas.trace import EffectCommitted, RunTrace
 from reasoning_kernel.tools.demo_mail import (
     DEMO_GRANT,
@@ -120,16 +119,15 @@ def run_scenario(
     *, run_id: str, query: str, world: MailWorld, plan: Plan, summary_text: str
 ) -> RunTrace:
     """Wire a kernel around scripted reasoners and run it. Returns the audit trace."""
-    ctx = RunContext(run_id=RunId(run_id), user=USER_EMAIL, query=query)
+    ctx = RunContext(run_id=RunId(run_id), user=USER_EMAIL, query=TrustedQuery(text=query))
     provider = FakeProvider({"Plan": plan, "EmailSummary": EmailSummary(text=summary_text)})
     registry = build_registry(world)
     trace = TraceWriter(ctx.run_id)
     dispatcher = EffectDispatcher(registry, Gate(DEMO_GRANT, RecipientIsUserPolicy()), trace, ctx)
     interpreter = Interpreter(
-        planner=PLLM(provider),
+        planner=PLLM(provider, grant=DEMO_GRANT),
         quarantine=QLLM(provider),
         dispatcher=dispatcher,
-        store=ValueStore(),
         trace=trace,
         q_schemas=Q_SCHEMAS,
     )

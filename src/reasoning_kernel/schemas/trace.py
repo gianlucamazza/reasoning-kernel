@@ -87,6 +87,12 @@ class RunErrored(TraceEvent):
     reason: str
 
 
+class RunAborted(TraceEvent):
+    kind: str = "run_aborted"
+    step_id: StepId | None = None
+    reason: str
+
+
 class RunTrace(BaseModel):
     """An immutable snapshot of a run's event log."""
 

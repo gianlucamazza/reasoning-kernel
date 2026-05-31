@@ -20,12 +20,11 @@ from reasoning_kernel.demo.email_exfil import (
 from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
-from reasoning_kernel.memory.store import ValueStore
 from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.reasoner.factory import default_model_for, get_llm_provider
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.ids import RunId
-from reasoning_kernel.schemas.policy import RunContext
+from reasoning_kernel.schemas.policy import RunContext, TrustedQuery
 from reasoning_kernel.schemas.trace import (
     EffectBlockedEvent,
     EffectCommitted,
@@ -44,16 +43,15 @@ from reasoning_kernel.tools.demo_mail import (
 def run_live(*, run_id: str, query: str, world: MailWorld) -> RunTrace:
     provider = get_llm_provider()  # default provider from settings
     model = default_model_for(provider.name)
-    ctx = RunContext(run_id=RunId(run_id), user=USER_EMAIL, query=query)
+    ctx = RunContext(run_id=RunId(run_id), user=USER_EMAIL, query=TrustedQuery(text=query))
     trace = TraceWriter(ctx.run_id)
     dispatcher = EffectDispatcher(
         build_registry(world), Gate(DEMO_GRANT, RecipientIsUserPolicy()), trace, ctx
     )
     interpreter = Interpreter(
-        planner=PLLM(provider, model=model),
+        planner=PLLM(provider, model=model, grant=DEMO_GRANT),
         quarantine=QLLM(provider, model=model),
         dispatcher=dispatcher,
-        store=ValueStore(),
         trace=trace,
         q_schemas=Q_SCHEMAS,
     )

@@ -14,6 +14,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from reasoning_kernel.schemas.capability import Capability, EffectLevel
+from reasoning_kernel.schemas.provenance import DataSubject
 
 
 class ToolSpec(BaseModel):
@@ -27,6 +28,7 @@ class ToolSpec(BaseModel):
     required_caps: frozenset[Capability]
     effect_level: EffectLevel
     result_readers: frozenset[Capability] = frozenset()
+    result_subjects: frozenset[DataSubject] = frozenset()  # whose data this tool's output is about
 
     @model_validator(mode="after")
     def _write_must_declare_capability(self) -> ToolSpec:

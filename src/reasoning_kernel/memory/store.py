@@ -4,8 +4,10 @@ Holds ``StepId -> TaintedValue``, and resolves a plan ``ArgValue`` (a reference 
 literal) into a ``TaintedValue``. Inline literals are labelled trusted: they come from the plan,
 which the planner produced having seen only the controlled query (Invariant A).
 
-Limit: taint is object-level. Navigating a ``path`` into a value keeps that value's label; there is
-no field-level provenance, so a value mixing trusted and untrusted fields carries the joined label.
+Limit: taint is object-level. Navigating a ``path`` keeps the whole value's label. This is sound
+today because every value is produced by a single step (homogeneous provenance). Field-level labels
+would be needed only once a value-COMBINING step exists (a hypothetical ``MergeStep`` building one
+structure from refs of differing labels); until then one label over-approximates, which is safer.
 """
 
 from __future__ import annotations
@@ -21,8 +23,10 @@ from reasoning_kernel.schemas.values import TaintedValue
 
 
 class ValueStore:
-    def __init__(self) -> None:
+    def __init__(self, query_label: ProvenanceLabel | None = None) -> None:
         self._values: dict[StepId, TaintedValue] = {}
+        # Inline literals derive their label from the run's (trusted) query — see resolve().
+        self._query_label = query_label if query_label is not None else ProvenanceLabel.trusted()
 
     def put(self, step_id: StepId, value: TaintedValue) -> None:
         if step_id in self._values:
@@ -40,10 +44,8 @@ class ValueStore:
             return TaintedValue(
                 value=_navigate(tv.value, arg.path), label=tv.label, produced_by=tv.produced_by
             )
-        # Inline literal: derives only from the (trusted) plan.
-        return TaintedValue(
-            value=arg, label=ProvenanceLabel.trusted(), produced_by=StepId("__literal__")
-        )
+        # Inline literal: derives from the run's query label (trusted unless the query is not).
+        return TaintedValue(value=arg, label=self._query_label, produced_by=StepId("__literal__"))
 
 
 def _navigate(value: Any, path: str) -> Any:

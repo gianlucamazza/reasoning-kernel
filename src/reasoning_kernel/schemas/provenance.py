@@ -24,20 +24,32 @@ class Source(StrEnum):
     DERIVED = "derived"  # combined from >1 input
 
 
+class DataSubject(StrEnum):
+    """Whose data a value is about — orthogonal to trust, used for declassification scoping."""
+
+    USER = "user"  # the requesting user's own data
+    THIRD_PARTY = "third_party"  # anyone else (contacts, other inboxes, ...)
+
+
 _UNTRUSTED: frozenset[Source] = frozenset({Source.TOOL_READ, Source.Q_LLM, Source.DERIVED})
 
 
 class ProvenanceLabel(BaseModel):
-    """Immutable provenance + capability-flow label attached to every value."""
+    """Immutable provenance label: where a value came from, where it may flow, who it is about."""
 
     model_config = ConfigDict(frozen=True)
 
     sources: frozenset[Source]
     readers: frozenset[Capability] | None = None  # None = unrestricted (trusted only)
+    subjects: frozenset[DataSubject] = frozenset()  # empty = no third-party content
 
     @property
     def is_tainted(self) -> bool:
         return bool(self.sources & _UNTRUSTED)
+
+    @property
+    def has_third_party(self) -> bool:
+        return DataSubject.THIRD_PARTY in self.subjects
 
     def allows_reader(self, cap: Capability) -> bool:
         """True if a value with this label may flow into an effect requiring ``cap``."""
@@ -48,4 +60,4 @@ class ProvenanceLabel(BaseModel):
     @classmethod
     def trusted(cls) -> ProvenanceLabel:
         """A label for data derived solely from the controlled user query."""
-        return cls(sources=frozenset({Source.USER_QUERY}), readers=None)
+        return cls(sources=frozenset({Source.USER_QUERY}), readers=None, subjects=frozenset())

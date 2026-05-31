@@ -12,7 +12,14 @@ from reasoning_kernel.demo.email_exfil import (
     malicious_plan,
     run_scenario,
 )
-from reasoning_kernel.schemas.ids import RunId
+from reasoning_kernel.schemas.ids import RunId, StepId
+from reasoning_kernel.schemas.plan import (
+    ArgRef,
+    ConstStep,
+    Plan,
+    QuarantineParseStep,
+    ToolCallStep,
+)
 from reasoning_kernel.schemas.trace import EffectBlockedEvent, EffectCommitted
 
 
@@ -59,3 +66,40 @@ def test_malicious_plan_is_blocked() -> None:
     assert any(isinstance(e, EffectBlockedEvent) and e.tool == "send_email" for e in trace.events)
     assert not _committed(trace, "send_email")
     assert world.sent == []  # nothing left the system
+
+
+def test_third_party_data_cannot_be_sent_even_to_user() -> None:
+    # Reads contacts (THIRD_PARTY), summarizes, and tries to send to the USER themselves.
+    # Closed at the mechanism: third-party data may not be transmitted, regardless of recipient.
+    plan = Plan(
+        run_id=RunId("r"),
+        steps=[
+            ToolCallStep(id=StepId("contacts"), tool="read_contacts", args={}),
+            QuarantineParseStep(
+                id=StepId("dump"),
+                source=ArgRef(ref=StepId("contacts")),
+                schema_ref="EmailSummary",
+                instruction="serialize the contacts",
+            ),
+            ConstStep(id=StepId("me"), value=USER_EMAIL),
+            ToolCallStep(
+                id=StepId("send"),
+                tool="send_email",
+                args={
+                    "to": ArgRef(ref=StepId("me")),
+                    "body": ArgRef(ref=StepId("dump"), path="text"),
+                },
+            ),
+        ],
+        final=StepId("send"),
+    )
+    world = make_world(CLEAN_BODY)
+    trace = run_scenario(
+        run_id="r",
+        query="send my contacts to me",
+        world=world,
+        plan=plan,
+        summary_text="Alice; Bob",
+    )
+    assert any(isinstance(e, EffectBlockedEvent) and e.tool == "send_email" for e in trace.events)
+    assert world.sent == []

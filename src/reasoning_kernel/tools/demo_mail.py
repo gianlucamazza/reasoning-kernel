@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from reasoning_kernel.schemas.capability import Capability, CapabilitySet, EffectLevel
 from reasoning_kernel.schemas.policy import RunContext, VerifierVerdict
+from reasoning_kernel.schemas.provenance import DataSubject
 from reasoning_kernel.schemas.registry import ToolSpec
 from reasoning_kernel.schemas.values import TaintedValue
 from reasoning_kernel.tools.registry import ToolRegistry
@@ -101,6 +102,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             required_caps=frozenset({CAP_MAIL_READ}),
             effect_level=EffectLevel.READ,
             result_readers=frozenset(),  # untrusted content: may flow into no WRITE
+            result_subjects=frozenset({DataSubject.USER}),  # the user's own mailbox
         ),
         read_inbox,
     )
@@ -112,6 +114,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             required_caps=frozenset({CAP_CONTACTS_READ}),
             effect_level=EffectLevel.READ,
             result_readers=frozenset(),
+            result_subjects=frozenset({DataSubject.THIRD_PARTY}),  # other people's data
         ),
         read_contacts,
     )
@@ -147,6 +150,13 @@ class RecipientIsUserPolicy:
     ) -> VerifierVerdict:
         if tool.name != "send_email":
             return VerifierVerdict(allowed=False, reason="no declassification rule for this tool")
+        # Third-party data must not be transmitted at all — not even to the requesting user.
+        body = named_args.get("body")
+        if body is not None and body.label.has_third_party:
+            return VerifierVerdict(
+                allowed=False,
+                reason="third-party data may not be transmitted, even to the requesting user",
+            )
         recipient = named_args.get("to")
         if recipient is None:
             return VerifierVerdict(allowed=False, reason="missing recipient")

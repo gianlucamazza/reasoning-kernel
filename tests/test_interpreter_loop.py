@@ -6,11 +6,11 @@ from reasoning_kernel.demo.email_exfil import CLEAN_BODY, USER_EMAIL, benign_pla
 from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
-from reasoning_kernel.memory.store import ValueStore
 from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.reasoner.fake import FakeProvider, Response
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.ids import RunId, StepId
+from reasoning_kernel.schemas.limits import RunLimits
 from reasoning_kernel.schemas.plan import (
     ArgRef,
     ConstStep,
@@ -18,7 +18,7 @@ from reasoning_kernel.schemas.plan import (
     QuarantineParseStep,
     ToolCallStep,
 )
-from reasoning_kernel.schemas.policy import RunContext
+from reasoning_kernel.schemas.policy import RunContext, TrustedQuery
 from reasoning_kernel.schemas.trace import (
     EffectCommitted,
     PlanEmitted,
@@ -38,20 +38,22 @@ from reasoning_kernel.tools.demo_mail import (
 )
 
 
-def _run(responses: dict[str, Response], world: MailWorld):
-    ctx = RunContext(run_id=RunId("r"), user=USER_EMAIL, query="summarize and send to me")
+def _run(responses: dict[str, Response], world: MailWorld, *, limits: RunLimits | None = None):
+    ctx = RunContext(
+        run_id=RunId("r"), user=USER_EMAIL, query=TrustedQuery(text="summarize and send to me")
+    )
     provider = FakeProvider(responses)
     trace = TraceWriter(ctx.run_id)
     dispatcher = EffectDispatcher(
         build_registry(world), Gate(DEMO_GRANT, RecipientIsUserPolicy()), trace, ctx
     )
     interpreter = Interpreter(
-        planner=PLLM(provider),
+        planner=PLLM(provider, grant=DEMO_GRANT),
         quarantine=QLLM(provider),
         dispatcher=dispatcher,
-        store=ValueStore(),
         trace=trace,
         q_schemas=Q_SCHEMAS,
+        limits=limits if limits is not None else RunLimits(),
     )
     return interpreter.run(ctx)
 

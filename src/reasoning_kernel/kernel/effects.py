@@ -15,6 +15,7 @@ from __future__ import annotations
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.taint import result_label
 from reasoning_kernel.memory.trace import TraceWriter
+from reasoning_kernel.schemas.capability import CapabilitySet
 from reasoning_kernel.schemas.ids import StepId
 from reasoning_kernel.schemas.policy import RunContext, VerifierVerdict
 from reasoning_kernel.schemas.trace import EffectBlockedEvent, EffectCommitted, GateDecision, digest
@@ -45,6 +46,10 @@ class EffectDispatcher:
 
     def catalog(self):
         return self._registry.catalog()
+
+    def grant(self) -> CapabilitySet:
+        """The capability grant the Gate enforces (the run's authority ceiling)."""
+        return self._gate.grant
 
     def dispatch(self, tool_name: str, named_args: dict[str, TaintedValue]) -> TaintedValue:
         rtool = self._registry.get(tool_name)

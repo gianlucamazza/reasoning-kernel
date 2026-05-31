@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from reasoning_kernel.reasoner.base import LLMProvider
 from reasoning_kernel.reasoner.parse import call_structured
+from reasoning_kernel.schemas.capability import CapabilitySet
 from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.plan import Plan
 
@@ -39,11 +40,22 @@ QUARANTINE_SYSTEM = (
 
 
 class PLLM:
-    """Privileged planner. Untrusted; sees only controlled input."""
+    """Privileged planner. Untrusted; sees only controlled input.
 
-    def __init__(self, provider: LLMProvider, *, model: str = "fake") -> None:
+    ``grant`` is the capability level this reasoner plans at — differentiation is by capabilities
+    granted, not by trust (§5.4). The kernel checks it never exceeds the dispatcher's grant.
+    """
+
+    def __init__(
+        self, provider: LLMProvider, *, model: str = "fake", grant: CapabilitySet | None = None
+    ) -> None:
         self._provider = provider
         self._model = model
+        self._grant = grant if grant is not None else CapabilitySet(granted=frozenset())
+
+    @property
+    def grant(self) -> CapabilitySet:
+        return self._grant
 
     def plan(self, planner_prompt: str, *, run_id: RunId) -> Plan:
         plan = call_structured(
@@ -59,6 +71,11 @@ class QLLM:
     def __init__(self, provider: LLMProvider, *, model: str = "fake") -> None:
         self._provider = provider
         self._model = model
+
+    @property
+    def grant(self) -> CapabilitySet:
+        """Structurally empty: the quarantined reasoner holds no capability, ever."""
+        return CapabilitySet(granted=frozenset())
 
     def parse_blob[T: BaseModel](self, *, prompt: str, schema: type[T]) -> T:
         return call_structured(

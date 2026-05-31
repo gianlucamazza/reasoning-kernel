@@ -12,8 +12,23 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from reasoning_kernel.schemas.ids import RunId
+from reasoning_kernel.schemas.provenance import ProvenanceLabel
 from reasoning_kernel.schemas.registry import ToolSpec
 from reasoning_kernel.schemas.values import TaintedValue
+
+
+class TrustedQuery(BaseModel):
+    """The controlled user query as an explicit trusted channel (Invariant A).
+
+    Carrying the label (not a bare ``str``/``NewType``) makes the trust assumption explicit and lets
+    planner-supplied literals DERIVE their provenance from the query: if the query were ever not
+    trusted, every ``const`` would inherit that taint automatically.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    text: str
+    label: ProvenanceLabel = ProvenanceLabel.trusted()
 
 
 class RunContext(BaseModel):
@@ -23,7 +38,7 @@ class RunContext(BaseModel):
 
     run_id: RunId
     user: str  # the trusted requesting identity (e.g. the user's own email)
-    query: str  # the controlled user query (the only thing the P-LLM ever sees)
+    query: TrustedQuery  # the controlled user query (the only thing the P-LLM ever sees)
 
 
 class VerifierVerdict(BaseModel):

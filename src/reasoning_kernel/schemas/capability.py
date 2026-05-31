@@ -44,3 +44,7 @@ class CapabilitySet(BaseModel):
 
     def allows_all(self, caps: frozenset[Capability]) -> bool:
         return caps <= self.granted
+
+    def is_subset_of(self, other: CapabilitySet) -> bool:
+        """True if contained in ``other`` — a child reasoner may not widen authority."""
+        return self.granted <= other.granted

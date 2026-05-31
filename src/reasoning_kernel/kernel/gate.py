@@ -25,6 +25,10 @@ class Gate:
         self._grant = grant
         self._declass = declass
 
+    @property
+    def grant(self) -> CapabilitySet:
+        return self._grant
+
     def check(
         self,
         spec: ToolSpec,
@@ -53,13 +57,19 @@ class Gate:
         # 3. provenance (only matters for WRITE effects)
         if spec.effect_level >= EffectLevel.WRITE:
             tainted = [v for v in named_args.values() if v.label.is_tainted]
-            if tainted:
-                # Permitted without declassification ONLY if the tool declares capabilities AND
-                # every tainted arg may flow into all of them. An empty required_caps set is not a
-                # free pass: tainted data into such a WRITE still needs explicit declassification
-                # (otherwise a WRITE tool with no declared capability would silently exfiltrate).
-                permitted = bool(spec.required_caps) and all(
-                    v.label.allows_reader(cap) for cap in spec.required_caps for v in tainted
+            has_third_party = any(v.label.has_third_party for v in named_args.values())
+            if tainted or has_third_party:
+                # Permitted without declassification ONLY if the tool declares capabilities, every
+                # tainted arg may flow into all of them, AND no argument carries third-party data.
+                # Two reasons it is otherwise routed to declassification:
+                #  - an empty required_caps set is not a free pass (capless WRITE would exfiltrate);
+                #  - third-party data must never be auto-permitted out, regardless of readers.
+                permitted = (
+                    not has_third_party
+                    and bool(spec.required_caps)
+                    and all(
+                        v.label.allows_reader(cap) for cap in spec.required_caps for v in tainted
+                    )
                 )
                 if not permitted:
                     verdict = self._declass.may_declassify(spec, named_args, ctx)

@@ -62,18 +62,26 @@ just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
 just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
 ```
 
-## Honest limits
+## What the kernel enforces
 
-- **Conformance ≠ safety**: a pass-through declassifier conforms yet protects nothing.
-- **Verification stays deterministic**: no LLM-as-judge on the commit path (§6.2).
-- **Provenance is effectiveness, not conformance**: a run without taint tracking still conforms.
-- **Object-level taint**: provenance labels a whole value, not its fields; navigating into a value
-  (`memory/store.py`) keeps the value's label. A value mixing trusted and untrusted fields is
-  labelled by the join — there is no field-level provenance.
-- **The query channel is assumed trusted**: Invariant A holds only if `RunContext.query` is a
-  controlled channel; nothing enforces the query's own provenance.
-- **`const`/inline literals are trusted**: they are labelled trusted because the planner that
-  produced them saw only the controlled query (the CaMeL rationale) — not a hole, by construction.
-- **The demo declassifier permits self-directed sends**: `RecipientIsUserPolicy` lets any tainted
-  body go to the user, including third-party data sent to oneself. That is a property of the demo
-  *policy* (it blocks sends to third parties), not of the pattern.
+- **Provenance is multi-dimensional**: a `ProvenanceLabel` carries *origin* (`sources`), *where it may
+  flow* (`readers`), and *whose data it is* (`subjects`). Third-party data is never auto-released into a
+  WRITE — even to the requesting user — and the Q-LLM cannot launder any of these dimensions.
+- **Invariant A is typed**: the trusted channel is a `TrustedQuery` (text + label); `const`/inline
+  literals DERIVE their label from it, so the trust assumption is explicit rather than by convention.
+- **Termination**: `RunLimits` bounds steps / effects / q-parses (and an optional per-call timeout); a
+  run exceeding a bound aborts closed (`RunAborted`), committing nothing further.
+- **Capability composition (§5.4)**: every reasoner is bound to a `CapabilitySet`; the kernel rejects a
+  reasoner whose grant exceeds the dispatcher's — a child can never widen authority.
+
+## Honest limits (fundamental — localized, not dissolved)
+
+- **Conformance ≠ safety**: a pass-through declassifier conforms yet protects nothing. The pattern
+  guarantees a topology; the *policy* carries correctness.
+- **Verification stays deterministic**: no LLM-as-judge on the commit path (§6.2); the Q-LLM is untrusted.
+- **The declassifier is the residual risk surface**: every `may_declassify=True` is a deliberate, traced
+  trust decision.
+- **Object-level taint (deferred, not a hole)**: a label covers a whole value, which is sound today
+  because every value is produced by a single step (homogeneous provenance). Field-level labels are
+  introduced only when a value-COMBINING step (a hypothetical `MergeStep`) exists — adding them now
+  would be dead machinery, and a single label over-approximates taint, which is strictly safer.
