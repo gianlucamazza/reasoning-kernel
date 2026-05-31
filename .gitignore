@@ -22,6 +22,7 @@ build/
 # OS
 .DS_Store
 
-# coverage artifacts
+# coverage & benchmark artifacts
 .coverage
 htmlcov/
+.benchmarks/
