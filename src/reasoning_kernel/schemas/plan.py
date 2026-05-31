@@ -80,20 +80,42 @@ class SubKernelStep(BaseModel):
     grant: list[str]  # capability names for the inner kernel (clamped to the outer grant)
 
 
+class MergeStep(BaseModel):
+    """Combine several earlier results into one structured value (the only value-COMBINING step).
+
+    The result is a ``dict`` of the named inputs, labelled with the *join* of their labels — sources
+    unioned (with ``DERIVED``), readers intersected, subjects unioned — so taint only ever increases
+    (over-approximation, never laundering). Useful to hand a composite of several reads to a single
+    Q-LLM parse or sub-kernel, which each take only one ``source``.
+    """
+
+    kind: Literal["merge"] = "merge"
+    id: StepId
+    inputs: dict[str, ArgRef]  # name -> reference; a merge combines results, never inline literals
+
+    @model_validator(mode="after")
+    def _non_empty(self) -> MergeStep:
+        if not self.inputs:
+            raise ValueError(f"merge step {self.id!r} has no inputs")
+        return self
+
+
 PlanStep = Annotated[
-    ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep,
+    ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep | MergeStep,
     Field(discriminator="kind"),
 ]
 
 
 def _refs_of(
-    step: ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep,
+    step: ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep | MergeStep,
 ) -> list[StepId]:
     """The StepIds this step depends on."""
     if isinstance(step, ToolCallStep):
         return [a.ref for a in step.args.values() if isinstance(a, ArgRef)]
     if isinstance(step, QuarantineParseStep | SubKernelStep):
         return [step.source.ref]
+    if isinstance(step, MergeStep):
+        return [r.ref for r in step.inputs.values()]
     return []
 
 

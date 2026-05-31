@@ -41,3 +41,7 @@ demo-limits:
 # run the fail-closed demo (a failing reasoner commits nothing — plan_rejected, no effect)
 demo-reasoner-error:
     uv run python -m reasoning_kernel.demo.reasoner_error
+
+# run the merge demo (combine several reads into one value; taint flows through the join)
+demo-merge:
+    uv run python -m reasoning_kernel.demo.merge

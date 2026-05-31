@@ -20,6 +20,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 | `just demo-subkernel` | §5.4 composition demo: untrusted content delegated at a reduced grant  |
 | `just demo-limits` | Termination demo: `RunLimits` aborts the run closed before the second effect |
 | `just demo-reasoner-error` | Fail-closed demo: a failing reasoner commits nothing (`plan_rejected`) |
+| `just demo-merge`  | `MergeStep` demo: combine several reads into one value; taint flows through the join |
 | `just test`        | Default suite **with coverage** (live tests excluded)                     |
 | `just lint`        | `ruff check` + `ruff format --check`                                      |
 | `just fix`         | `ruff check --fix` + `ruff format`                                        |

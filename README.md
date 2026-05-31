@@ -64,6 +64,7 @@ just lint && just typecheck
 just demo-subkernel  # §5.4: delegate untrusted content to an inner kernel at a reduced grant
 just demo-limits        # termination: RunLimits aborts the run closed before the second effect
 just demo-reasoner-error # fail-closed: a failing reasoner commits nothing (plan_rejected)
+just demo-merge      # MergeStep: combine several reads into one value; taint flows through the join
 
 uv sync --all-extras           # adds the provider SDKs for the live flows below
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
@@ -120,7 +121,8 @@ pre-commit) and how to configure provider keys. Release notes are in
 - **No atomicity / rollback**: an effect already committed is real even if a later step (or the outer run
   of a sub-kernel) fails — same semantics as a flat plan. The shared trace makes the partial commit
   visible; the kernel does not pretend to offer transactions.
-- **Object-level taint (deferred, not a hole)**: a label covers a whole value, which is sound today
-  because every value is produced by a single step (homogeneous provenance). Field-level labels are
-  introduced only when a value-COMBINING step (a hypothetical `MergeStep`) exists — adding them now
-  would be dead machinery, and a single label over-approximates taint, which is strictly safer.
+- **Object-level taint (deferred, not a hole)**: a label covers a whole value. The value-COMBINING step
+  (`MergeStep`) labels its result with the *join* of its inputs, so a composite of differing provenances
+  carries one label that over-approximates them all — strictly safer than per-field labels. Field-level
+  labels (recovering a trusted field out of a mixed structure without over-tainting it) stay deferred:
+  they buy precision, not soundness, and only pay off once a real use case needs them.
