@@ -54,17 +54,33 @@ class QuarantineParseStep(BaseModel):
     instruction: str  # extraction instruction (data, never commands)
 
 
+class SubKernelStep(BaseModel):
+    """Delegate processing of an untrusted blob to an inner Reasoning Kernel (§5.4).
+
+    The inner kernel runs at a REDUCED capability grant (clamped to a subset of the outer grant), so
+    an injection in the blob is confined: it can only do what the reduced grant permits.
+    """
+
+    kind: Literal["subkernel"] = "subkernel"
+    id: StepId
+    source: ArgRef  # the untrusted content the sub-kernel reasons over
+    instruction: str  # the (trusted) task, from the outer planner
+    grant: list[str]  # capability names for the inner kernel (clamped to the outer grant)
+
+
 PlanStep = Annotated[
-    ConstStep | ToolCallStep | QuarantineParseStep,
+    ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep,
     Field(discriminator="kind"),
 ]
 
 
-def _refs_of(step: ConstStep | ToolCallStep | QuarantineParseStep) -> list[StepId]:
+def _refs_of(
+    step: ConstStep | ToolCallStep | QuarantineParseStep | SubKernelStep,
+) -> list[StepId]:
     """The StepIds this step depends on."""
     if isinstance(step, ToolCallStep):
         return [a.ref for a in step.args.values() if isinstance(a, ArgRef)]
-    if isinstance(step, QuarantineParseStep):
+    if isinstance(step, QuarantineParseStep | SubKernelStep):
         return [step.source.ref]
     return []
 

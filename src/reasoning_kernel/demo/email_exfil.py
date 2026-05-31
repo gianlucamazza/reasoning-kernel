@@ -131,7 +131,7 @@ def run_scenario(
         trace=trace,
         q_schemas=Q_SCHEMAS,
     )
-    return interpreter.run(ctx)
+    return interpreter.run(ctx).trace
 
 
 def _committed_sends(trace: RunTrace) -> list[str]:

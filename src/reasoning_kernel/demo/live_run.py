@@ -55,7 +55,7 @@ def run_live(*, run_id: str, query: str, world: MailWorld) -> RunTrace:
         trace=trace,
         q_schemas=Q_SCHEMAS,
     )
-    return interpreter.run(ctx)
+    return interpreter.run(ctx).trace
 
 
 def _report(title: str, trace: RunTrace, world: MailWorld) -> None:

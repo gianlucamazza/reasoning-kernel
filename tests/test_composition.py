@@ -52,7 +52,7 @@ def test_planner_grant_exceeding_dispatcher_is_rejected() -> None:
 
 def test_subset_grant_accepted_and_commits() -> None:
     interp, ctx, world = _build(DEMO_GRANT)
-    trace = interp.run(ctx)
+    trace = interp.run(ctx).trace
     assert any(isinstance(e, RunCommitted) for e in trace.events)
     assert world.sent and world.sent[0].to == USER_EMAIL
 

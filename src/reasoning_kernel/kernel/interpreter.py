@@ -16,13 +16,20 @@ from pydantic import BaseModel, ValidationError
 
 from reasoning_kernel.context.assembler import build_planner_context, build_quarantine_context
 from reasoning_kernel.kernel.effects import EffectBlocked, EffectDispatcher
-from reasoning_kernel.kernel.taint import quarantine_label
+from reasoning_kernel.kernel.taint import join_labels, quarantine_label
 from reasoning_kernel.memory.store import ValueStore
 from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
+from reasoning_kernel.schemas.capability import Capability, CapabilitySet
+from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.limits import RunLimits
-from reasoning_kernel.schemas.plan import ConstStep, QuarantineParseStep, ToolCallStep
-from reasoning_kernel.schemas.policy import RunContext
+from reasoning_kernel.schemas.plan import (
+    ConstStep,
+    QuarantineParseStep,
+    SubKernelStep,
+    ToolCallStep,
+)
+from reasoning_kernel.schemas.policy import RunContext, TrustedQuery
 from reasoning_kernel.schemas.trace import (
     PlanEmitted,
     PlanRejected,
@@ -31,7 +38,7 @@ from reasoning_kernel.schemas.trace import (
     RunBlocked,
     RunCommitted,
     RunErrored,
-    RunTrace,
+    RunResult,
     StepStarted,
     digest,
 )
@@ -60,6 +67,7 @@ class Interpreter:
         trace: TraceWriter,
         q_schemas: dict[str, type[BaseModel]],
         limits: RunLimits = RunLimits(),
+        depth: int = 0,
     ) -> None:
         # A reasoner may never plan beyond the kernel's authority (the §5.4 composition invariant).
         if not planner.grant.is_subset_of(dispatcher.grant()):
@@ -70,11 +78,12 @@ class Interpreter:
         self._trace = trace
         self._q_schemas = q_schemas
         self._limits = limits
+        self._depth = depth
         self._store = ValueStore()  # replaced per run() with the query's label
         self._effects = 0
         self._q_parses = 0
 
-    def run(self, ctx: RunContext) -> RunTrace:
+    def run(self, ctx: RunContext) -> RunResult:
         # Per-run state — the store is labelled with the run's (trusted) query.
         self._store = ValueStore(ctx.query.label)
         self._effects = 0
@@ -85,10 +94,10 @@ class Interpreter:
             plan = self._call_reasoner(lambda: self._planner.plan(prompt, run_id=ctx.run_id))
         except _PLAN_ERRORS as exc:
             self._trace.emit(PlanRejected(run_id=ctx.run_id, reason=str(exc)))
-            return self._trace.snapshot()
+            return self._closed()
         except _RunAborted as ab:
             self._trace.emit(RunAborted(run_id=ctx.run_id, reason=ab.reason))
-            return self._trace.snapshot()
+            return self._closed()
         self._trace.emit(PlanEmitted(run_id=ctx.run_id, plan=plan))
 
         if self._limits.max_steps is not None and len(plan.steps) > self._limits.max_steps:
@@ -98,7 +107,7 @@ class Interpreter:
                     reason=f"plan has {len(plan.steps)} steps > max_steps {self._limits.max_steps}",
                 )
             )
-            return self._trace.snapshot()
+            return self._closed()
 
         for step in plan.steps:
             self._trace.emit(StepStarted(run_id=ctx.run_id, step=step))
@@ -106,19 +115,22 @@ class Interpreter:
                 value = self._eval_step(step, ctx)
             except EffectBlocked:
                 self._trace.emit(RunBlocked(run_id=ctx.run_id, tool=_tool_name(step)))
-                return self._trace.snapshot()
+                return self._closed()
             except _RunAborted as ab:
                 self._trace.emit(RunAborted(run_id=ctx.run_id, step_id=step.id, reason=ab.reason))
-                return self._trace.snapshot()
+                return self._closed()
             except _PLAN_ERRORS as exc:
                 self._trace.emit(RunErrored(run_id=ctx.run_id, step_id=step.id, reason=str(exc)))
-                return self._trace.snapshot()
+                return self._closed()
             self._store.put(step.id, value)
 
-        self._trace.emit(
-            RunCommitted(run_id=ctx.run_id, final_digest=digest(self._store.get(plan.final).value))
-        )
-        return self._trace.snapshot()
+        final = self._store.get(plan.final)
+        self._trace.emit(RunCommitted(run_id=ctx.run_id, final_digest=digest(final.value)))
+        return RunResult(trace=self._trace.snapshot(), committed=final)
+
+    def _closed(self) -> RunResult:
+        """A fail-closed outcome: the trace so far, with nothing committed."""
+        return RunResult(trace=self._trace.snapshot(), committed=None)
 
     def _eval_step(self, step: object, ctx: RunContext) -> TaintedValue:
         if isinstance(step, ConstStep):
@@ -148,7 +160,43 @@ class Interpreter:
                 raise _RunAborted(f"effect count exceeds max_effects {self._limits.max_effects}")
             named = {k: self._store.resolve(a) for k, a in step.args.items()}
             return self._dispatcher.dispatch(step.tool, named)
+        if isinstance(step, SubKernelStep):
+            return self._eval_subkernel(step, ctx)
         raise TypeError(f"unknown step kind: {type(step).__name__}")
+
+    def _eval_subkernel(self, step: SubKernelStep, ctx: RunContext) -> TaintedValue:
+        if self._limits.max_depth is not None and self._depth + 1 > self._limits.max_depth:
+            raise _RunAborted(f"sub-kernel depth exceeds max_depth {self._limits.max_depth}")
+        src = self._store.resolve(step.source)
+
+        # Clamp the requested grant to the outer authority — a sub-kernel can never widen it.
+        requested = frozenset(Capability(name=n) for n in step.grant)
+        inner_grant = CapabilitySet(granted=requested & self._dispatcher.grant().granted)
+
+        # The sub-planner's query is the (trusted) instruction plus the UNTRUSTED blob, labelled by
+        # the blob's label, so every literal it produces inherits that taint (Invariant A).
+        sub_text = f"{step.instruction}\n\n--- untrusted content ---\n{src.value}"
+        sub_ctx = RunContext(
+            run_id=RunId(f"{ctx.run_id}/{step.id}"),
+            user=ctx.user,
+            query=TrustedQuery(text=sub_text, label=src.label),
+        )
+        sub = Interpreter(
+            planner=self._planner.for_grant(inner_grant),
+            quarantine=self._quarantine,
+            dispatcher=self._dispatcher.for_subkernel(inner_grant, sub_ctx),
+            trace=self._trace,  # shared: sub events interleave under the suffixed run_id
+            q_schemas=self._q_schemas,
+            limits=self._limits,
+            depth=self._depth + 1,
+        )
+        result = sub.run(sub_ctx)
+        if result.committed is None:
+            # The sub-kernel committed nothing (blocked/aborted/errored): the task failed closed.
+            raise ValueError(f"sub-kernel {step.id} did not commit")
+        # The outer value must dominate everything the sub touched: join source + sub-final labels.
+        label = join_labels([quarantine_label(src.label), result.committed.label])
+        return TaintedValue(value=result.committed.value, label=label, produced_by=step.id)
 
     def _call_reasoner[T](self, thunk: Callable[[], T]) -> T:
         """Invoke a reasoner, enforcing the optional per-call timeout (deterministic when unset)."""

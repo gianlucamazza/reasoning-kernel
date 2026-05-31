@@ -19,4 +19,5 @@ class RunLimits(BaseModel):
     max_steps: int | None = None  # total plan steps
     max_effects: int | None = None  # ToolCallSteps actually dispatched
     max_q_parses: int | None = None  # quarantined parses
+    max_depth: int | None = None  # nested sub-kernel depth (recursion bound)
     reasoner_timeout_s: float | None = None  # wall-clock per reasoner call

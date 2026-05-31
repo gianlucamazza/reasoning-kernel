@@ -29,3 +29,7 @@ demo:
 # run the demo end-to-end against a REAL provider (needs a key in .env)
 demo-live:
     uv run python -m reasoning_kernel.demo.live_run
+
+# run the composable sub-kernel demo (delegate untrusted content under a reduced grant)
+demo-subkernel:
+    uv run python -m reasoning_kernel.demo.subkernel

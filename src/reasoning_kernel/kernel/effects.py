@@ -51,6 +51,14 @@ class EffectDispatcher:
         """The capability grant the Gate enforces (the run's authority ceiling)."""
         return self._gate.grant
 
+    def for_subkernel(self, grant: CapabilitySet, ctx: RunContext) -> EffectDispatcher:
+        """A dispatcher over the SAME registry and shared trace, at a reduced grant (a sub-kernel).
+
+        Same registry means the inner kernel cannot reach a callable the outer one couldn't; the
+        clamped Gate means it can authorize strictly less. Every effect still routes through a Gate.
+        """
+        return EffectDispatcher(self._registry, self._gate.for_grant(grant), self._trace, ctx)
+
     def dispatch(self, tool_name: str, named_args: dict[str, TaintedValue]) -> TaintedValue:
         rtool = self._registry.get(tool_name)
         spec = rtool.spec

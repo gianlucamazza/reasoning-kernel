@@ -55,7 +55,7 @@ def _run(responses: dict[str, Response], world: MailWorld, *, limits: RunLimits 
         q_schemas=Q_SCHEMAS,
         limits=limits if limits is not None else RunLimits(),
     )
-    return interpreter.run(ctx)
+    return interpreter.run(ctx).trace
 
 
 def _ok_responses() -> dict[str, Response]:

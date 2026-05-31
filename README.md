@@ -58,6 +58,7 @@ uv sync --extra dev
 just demo        # FakeProvider: legit send commits; injection inert; exfiltration BLOCKED
 just test        # key-free suite incl. the conformance + blocking proofs
 just lint && just typecheck
+just demo-subkernel  # §5.4: delegate untrusted content to an inner kernel at a reduced grant
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
 just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
 ```
@@ -72,7 +73,10 @@ just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs A
 - **Termination**: `RunLimits` bounds steps / effects / q-parses (and an optional per-call timeout); a
   run exceeding a bound aborts closed (`RunAborted`), committing nothing further.
 - **Capability composition (§5.4)**: every reasoner is bound to a `CapabilitySet`; the kernel rejects a
-  reasoner whose grant exceeds the dispatcher's — a child can never widen authority.
+  reasoner whose grant exceeds the dispatcher's — a child can never widen authority. A `SubKernelStep`
+  delegates untrusted content to an inner kernel at a **clamped, reduced grant**: an injection in that
+  content is confined to what the delegated grant permits, even capabilities the outer kernel holds but
+  did not delegate (see `just demo-subkernel`). `RunLimits.max_depth` bounds nesting.
 
 ## Honest limits (fundamental — localized, not dissolved)
 
@@ -81,6 +85,9 @@ just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs A
 - **Verification stays deterministic**: no LLM-as-judge on the commit path (§6.2); the Q-LLM is untrusted.
 - **The declassifier is the residual risk surface**: every `may_declassify=True` is a deliberate, traced
   trust decision.
+- **No atomicity / rollback**: an effect already committed is real even if a later step (or the outer run
+  of a sub-kernel) fails — same semantics as a flat plan. The shared trace makes the partial commit
+  visible; the kernel does not pretend to offer transactions.
 - **Object-level taint (deferred, not a hole)**: a label covers a whole value, which is sound today
   because every value is produced by a single step (homogeneous provenance). Field-level labels are
   introduced only when a value-COMBINING step (a hypothetical `MergeStep`) exists — adding them now

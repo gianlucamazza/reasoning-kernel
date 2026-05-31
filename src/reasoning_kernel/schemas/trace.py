@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import hashlib
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from reasoning_kernel.schemas.ids import RunId, StepId
 from reasoning_kernel.schemas.plan import Plan, PlanStep
 from reasoning_kernel.schemas.policy import VerifierVerdict
 from reasoning_kernel.schemas.provenance import ProvenanceLabel
+from reasoning_kernel.schemas.values import TaintedValue
 
 
 def digest(value: object) -> str:
@@ -98,3 +99,12 @@ class RunTrace(BaseModel):
 
     run_id: RunId
     events: list[TraceEvent]
+
+
+class RunResult(BaseModel):
+    """A run's outcome: the audit trace plus the committed final value (None if not committed)."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    trace: RunTrace
+    committed: TaintedValue | None = None

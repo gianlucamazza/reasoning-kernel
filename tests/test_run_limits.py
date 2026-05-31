@@ -33,14 +33,18 @@ def _run(world: MailWorld, limits: RunLimits):
     dispatcher = EffectDispatcher(
         build_registry(world), Gate(DEMO_GRANT, RecipientIsUserPolicy()), trace, ctx
     )
-    return Interpreter(
-        planner=PLLM(provider, grant=DEMO_GRANT),
-        quarantine=QLLM(provider),
-        dispatcher=dispatcher,
-        trace=trace,
-        q_schemas=Q_SCHEMAS,
-        limits=limits,
-    ).run(ctx)
+    return (
+        Interpreter(
+            planner=PLLM(provider, grant=DEMO_GRANT),
+            quarantine=QLLM(provider),
+            dispatcher=dispatcher,
+            trace=trace,
+            q_schemas=Q_SCHEMAS,
+            limits=limits,
+        )
+        .run(ctx)
+        .trace
+    )
 
 
 def test_max_effects_aborts_before_second_effect() -> None:

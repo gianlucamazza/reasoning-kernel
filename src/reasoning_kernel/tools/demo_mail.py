@@ -23,8 +23,11 @@ from reasoning_kernel.tools.registry import ToolRegistry
 CAP_MAIL_READ = Capability(name="mail.read")
 CAP_CONTACTS_READ = Capability(name="contacts.read")
 CAP_MAIL_SEND = Capability(name="mail.send")
+CAP_CALENDAR_WRITE = Capability(name="calendar.write")
 
-DEMO_GRANT = CapabilitySet(granted=frozenset({CAP_MAIL_READ, CAP_CONTACTS_READ, CAP_MAIL_SEND}))
+DEMO_GRANT = CapabilitySet(
+    granted=frozenset({CAP_MAIL_READ, CAP_CONTACTS_READ, CAP_MAIL_SEND, CAP_CALENDAR_WRITE})
+)
 
 
 # --- tool I/O schemas -------------------------------------------------------------
@@ -65,6 +68,16 @@ class SendEmailOut(BaseModel):
     message_id: str
 
 
+class CreateEventIn(BaseModel):
+    title: str
+    date: str
+
+
+class CreateEventOut(BaseModel):
+    ok: bool
+    event_id: str
+
+
 class EmailSummary(BaseModel):
     """Q-LLM output schema — data only, no actions."""
 
@@ -77,10 +90,11 @@ class MailWorld:
     inbox: list[EmailMessage]
     contacts: list[Contact]
     sent: list[SendEmailIn] = field(default_factory=list)
+    events: list[CreateEventIn] = field(default_factory=list)
 
 
 def build_registry(world: MailWorld) -> ToolRegistry:
-    """Register the three demo tools against ``world``. READ tools taint their output."""
+    """Register the demo tools against ``world``. READ tools taint their output."""
 
     def read_inbox(_inp: BaseModel) -> BaseModel:
         return ReadInboxOut(latest=world.inbox[-1])
@@ -92,6 +106,11 @@ def build_registry(world: MailWorld) -> ToolRegistry:
         assert isinstance(inp, SendEmailIn)
         world.sent.append(inp)
         return SendEmailOut(ok=True, message_id=f"msg-{len(world.sent)}")
+
+    def create_event(inp: BaseModel) -> BaseModel:
+        assert isinstance(inp, CreateEventIn)
+        world.events.append(inp)
+        return CreateEventOut(ok=True, event_id=f"evt-{len(world.events)}")
 
     registry = ToolRegistry()
     registry.register(
@@ -128,6 +147,16 @@ def build_registry(world: MailWorld) -> ToolRegistry:
         ),
         send_email,
     )
+    registry.register(
+        ToolSpec(
+            name="create_event",
+            input_schema=CreateEventIn,
+            output_schema=CreateEventOut,
+            required_caps=frozenset({CAP_CALENDAR_WRITE}),
+            effect_level=EffectLevel.WRITE,
+        ),
+        create_event,
+    )
     return registry
 
 
@@ -148,6 +177,13 @@ class RecipientIsUserPolicy:
         named_args: dict[str, TaintedValue],
         ctx: RunContext,
     ) -> VerifierVerdict:
+        # create_event: a calendar entry derived from the user's own data is fine; third-party not.
+        if tool.name == "create_event":
+            if any(v.label.has_third_party for v in named_args.values()):
+                return VerifierVerdict(
+                    allowed=False, reason="third-party data may not be written to the calendar"
+                )
+            return VerifierVerdict(allowed=True, reason="event derived from the user's own data")
         if tool.name != "send_email":
             return VerifierVerdict(allowed=False, reason="no declassification rule for this tool")
         # Third-party data must not be transmitted at all — not even to the requesting user.

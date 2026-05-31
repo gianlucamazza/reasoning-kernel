@@ -29,6 +29,10 @@ class Gate:
     def grant(self) -> CapabilitySet:
         return self._grant
 
+    def for_grant(self, grant: CapabilitySet) -> Gate:
+        """A Gate with the same declassification policy at a reduced grant (for sub-kernels)."""
+        return Gate(grant, self._declass)
+
     def check(
         self,
         spec: ToolSpec,

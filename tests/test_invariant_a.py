@@ -38,13 +38,17 @@ def _run_benign(query: TrustedQuery, world):
     dispatcher = EffectDispatcher(
         build_registry(world), Gate(DEMO_GRANT, RecipientIsUserPolicy()), trace, ctx
     )
-    return Interpreter(
-        planner=PLLM(spy, grant=DEMO_GRANT),
-        quarantine=QLLM(spy),
-        dispatcher=dispatcher,
-        trace=trace,
-        q_schemas=Q_SCHEMAS,
-    ).run(ctx)
+    return (
+        Interpreter(
+            planner=PLLM(spy, grant=DEMO_GRANT),
+            quarantine=QLLM(spy),
+            dispatcher=dispatcher,
+            trace=trace,
+            q_schemas=Q_SCHEMAS,
+        )
+        .run(ctx)
+        .trace
+    )
 
 
 # Markers that appear in INJECTED_BODY but must never reach the planner.
