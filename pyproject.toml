@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "reasoning-kernel"
-version = "0.4.0"
+name = "capability-reasoning-kernel"
+version = "0.4.1"
 description = "Reference implementation of the Reasoning Kernel pattern (strong / CaMeL-like form)"
 authors = [{ name = "Gianluca Mazza — Venere Labs" }]
 license = { text = "MIT" }
