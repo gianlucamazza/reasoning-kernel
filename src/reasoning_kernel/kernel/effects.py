@@ -18,6 +18,7 @@ from reasoning_kernel.memory.trace import TraceWriter
 from reasoning_kernel.schemas.capability import CapabilitySet
 from reasoning_kernel.schemas.ids import StepId
 from reasoning_kernel.schemas.policy import RunContext, VerifierVerdict
+from reasoning_kernel.schemas.registry import ToolSpec
 from reasoning_kernel.schemas.trace import EffectBlockedEvent, EffectCommitted, GateDecision, digest
 from reasoning_kernel.schemas.values import TaintedValue
 from reasoning_kernel.tools.registry import ToolRegistry
@@ -44,7 +45,7 @@ class EffectDispatcher:
         self._trace = trace
         self._ctx = ctx
 
-    def catalog(self):
+    def catalog(self) -> list[ToolSpec]:
         return self._registry.catalog()
 
     def grant(self) -> CapabilitySet:

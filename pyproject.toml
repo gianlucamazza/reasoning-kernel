@@ -21,8 +21,9 @@ requires-python = ">=3.12"
 dependencies = ["pydantic>=2.7", "pydantic-settings>=2.0"]
 
 [project.optional-dependencies]
+# Deepseek needs no separate dep: it is OpenAI-compatible and reuses the `openai` SDK via base_url.
 providers = ["anthropic>=0.40", "openai>=1.50"]
-dev = ["pytest>=8.0", "ruff>=0.9", "pyright>=1.1.380"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.9", "pyright>=1.1.380"]
 
 [project.scripts]
 reasoning-kernel-demo = "reasoning_kernel.demo.email_exfil:main"
@@ -42,8 +43,9 @@ ignore = ["B008"]                                 # function calls in default ar
 include = ["src/reasoning_kernel"]
 pythonVersion = "3.12"
 strict = [
-  "src/reasoning_kernel/schemas",
-] # contract layer is strict; integrations basic
+  "src/reasoning_kernel/schemas", # contract layer
+  "src/reasoning_kernel/kernel",  # the trusted core: interpreter, gate, dispatcher, taint
+] # strict on the security-critical layers; integrations stay basic
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -52,3 +54,13 @@ addopts = "-m 'not live'"
 markers = [
   "live: tests that call real provider APIs (require API keys; excluded by default)",
 ]
+
+[tool.coverage.run]
+source = ["reasoning_kernel"]
+omit = [
+  "*/demo/*",
+] # runnable examples, exercised by `just demo*`, not the unit suite
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 85

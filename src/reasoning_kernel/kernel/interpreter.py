@@ -19,6 +19,7 @@ from reasoning_kernel.kernel.effects import EffectBlocked, EffectDispatcher
 from reasoning_kernel.kernel.taint import join_labels, quarantine_label
 from reasoning_kernel.memory.store import ValueStore
 from reasoning_kernel.memory.trace import TraceWriter
+from reasoning_kernel.reasoner.base import ReasonerError
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.capability import Capability, CapabilitySet
 from reasoning_kernel.schemas.ids import RunId
@@ -44,9 +45,10 @@ from reasoning_kernel.schemas.trace import (
 )
 from reasoning_kernel.schemas.values import TaintedValue
 
-# Errors that mean "the model produced a plan the kernel cannot safely execute". They are
-# failed closed (recorded, no effect committed), not crashes. Unexpected errors still propagate.
-_PLAN_ERRORS = (ValidationError, ValueError, KeyError)
+# Errors that mean "the model produced a plan the kernel cannot safely execute", or a reasoner
+# failed to return usable output. They are failed closed (recorded, no effect committed), not
+# crashes. Unexpected errors still propagate.
+_PLAN_ERRORS = (ValidationError, ValueError, KeyError, ReasonerError)
 
 
 class _RunAborted(Exception):
@@ -199,16 +201,24 @@ class Interpreter:
         return TaintedValue(value=result.committed.value, label=label, produced_by=step.id)
 
     def _call_reasoner[T](self, thunk: Callable[[], T]) -> T:
-        """Invoke a reasoner, enforcing the optional per-call timeout (deterministic when unset)."""
+        """Invoke a reasoner, enforcing the optional per-call timeout (deterministic when unset).
+
+        On timeout the run aborts *immediately*: we must not use the executor as a context manager,
+        because its ``__exit__`` calls ``shutdown(wait=True)`` and would block on the very call we
+        timed out. We shut down without waiting; Python cannot kill the orphan thread, so the bound
+        is on the run, not on the underlying call (which still relies on the provider's timeout).
+        """
         timeout = self._limits.reasoner_timeout_s
         if timeout is None:
             return thunk()
-        with futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(thunk)
-            try:
-                return future.result(timeout=timeout)
-            except futures.TimeoutError:
-                raise _RunAborted(f"reasoner call exceeded {timeout}s") from None
+        pool = futures.ThreadPoolExecutor(max_workers=1)
+        future = pool.submit(thunk)
+        try:
+            return future.result(timeout=timeout)
+        except futures.TimeoutError:
+            raise _RunAborted(f"reasoner call exceeded {timeout}s") from None
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
 
 
 def _tool_name(step: object) -> str:

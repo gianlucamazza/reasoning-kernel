@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage
+from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError
 
 
 def _is_strict_schema_error(exc: Exception) -> bool:
@@ -68,14 +68,16 @@ class OpenAIProvider:
                 response_format=schema,
                 max_completion_tokens=max_tokens,
             )
+            if not completion.choices:
+                raise ReasonerError("provider returned no choices")
             choice = completion.choices[0]
             if choice.message.refusal:
-                raise RuntimeError(
+                raise ReasonerError(
                     f"provider refused structured response: {choice.message.refusal}"
                 )
             parsed = choice.message.parsed
             if parsed is None:
-                raise RuntimeError("provider returned no parsed content")
+                raise ReasonerError("provider returned no parsed content")
         except openai.BadRequestError as exc:
             if not _is_strict_schema_error(exc):
                 raise
@@ -118,5 +120,7 @@ class OpenAIProvider:
             response_format={"type": "json_object"},
             max_completion_tokens=max_tokens,
         )
+        if not completion.choices:
+            raise ReasonerError("provider returned no choices")
         content = completion.choices[0].message.content or ""
         return completion, schema.model_validate_json(content)

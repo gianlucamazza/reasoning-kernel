@@ -40,8 +40,11 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 | Verifier       | `kernel/gate.py`, `effects.py`  | verification policy             |
 | Memory / Trace | `memory/`                       | durability / audit format       |
 
-Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible), plus a deterministic
-`FakeProvider` for key-free tests — all behind one interface (`reasoner/base.py`).
+Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
+`base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
+behind one interface (`reasoner/base.py`). The fungibility corollary is validated live: OpenAI and
+Deepseek return schema-valid `Plan`s through the same interface (`just test-live`); Anthropic is
+exercised on demand when its key is set.
 
 ## No effect bypasses the Verifier — by construction
 
@@ -54,14 +57,19 @@ Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible), plus a dete
 ## Run it
 
 ```bash
-uv sync --extra dev
+uv sync --extra dev            # key-free: demo + the full default test suite
 just demo        # FakeProvider: legit send commits; injection inert; exfiltration BLOCKED
-just test        # key-free suite incl. the conformance + blocking proofs
+just test        # key-free suite (with coverage) incl. the conformance + blocking proofs
 just lint && just typecheck
 just demo-subkernel  # §5.4: delegate untrusted content to an inner kernel at a reduced grant
+
+uv sync --all-extras           # adds the provider SDKs for the live flows below
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
 just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
 ```
+
+See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the quality bar (coverage gate, strict typing,
+pre-commit) and how to configure provider keys.
 
 ## What the kernel enforces
 
@@ -71,7 +79,12 @@ just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs A
 - **Invariant A is typed**: the trusted channel is a `TrustedQuery` (text + label); `const`/inline
   literals DERIVE their label from it, so the trust assumption is explicit rather than by convention.
 - **Termination**: `RunLimits` bounds steps / effects / q-parses (and an optional per-call timeout); a
-  run exceeding a bound aborts closed (`RunAborted`), committing nothing further.
+  run exceeding a bound aborts closed (`RunAborted`), committing nothing further. The timeout abort is
+  prompt — it does not block waiting on the hung call (`kernel/interpreter.py:_call_reasoner`).
+- **Reasoner failure is fail-closed**: a provider that returns no usable output (empty / refused /
+  malformed) raises `ReasonerError` (`reasoner/base.py`); the Conductor records it and commits
+  nothing, rather than crashing or acting on a partial result. Treating the model as untrusted compute
+  means a flaky reasoner can never produce a half-applied effect.
 - **Capability composition (§5.4)**: every reasoner is bound to a `CapabilitySet`; the kernel rejects a
   reasoner whose grant exceeds the dispatcher's — a child can never widen authority. A `SubKernelStep`
   delegates untrusted content to an inner kernel at a **clamped, reduced grant**: an injection in that

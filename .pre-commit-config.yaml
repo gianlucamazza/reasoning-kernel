@@ -19,8 +19,8 @@ repos:
   - repo: local
     hooks:
       - id: pyright
-        name: pyright (strict on schemas/)
+        name: pyright (strict on schemas + kernel)
         language: system
-        entry: uv run pyright src/reasoning_kernel/schemas
+        entry: uv run pyright src/reasoning_kernel/schemas src/reasoning_kernel/kernel
         pass_filenames: false
         types: [python]

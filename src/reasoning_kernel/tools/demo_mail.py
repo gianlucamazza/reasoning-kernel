@@ -97,18 +97,22 @@ def build_registry(world: MailWorld) -> ToolRegistry:
     """Register the demo tools against ``world``. READ tools taint their output."""
 
     def read_inbox(_inp: BaseModel) -> BaseModel:
+        if not world.inbox:
+            raise ValueError("inbox is empty: no latest email to read")
         return ReadInboxOut(latest=world.inbox[-1])
 
     def read_contacts(_inp: BaseModel) -> BaseModel:
         return ReadContactsOut(contacts=list(world.contacts))
 
     def send_email(inp: BaseModel) -> BaseModel:
-        assert isinstance(inp, SendEmailIn)
+        if not isinstance(inp, SendEmailIn):
+            raise TypeError(f"send_email expected SendEmailIn, got {type(inp).__name__}")
         world.sent.append(inp)
         return SendEmailOut(ok=True, message_id=f"msg-{len(world.sent)}")
 
     def create_event(inp: BaseModel) -> BaseModel:
-        assert isinstance(inp, CreateEventIn)
+        if not isinstance(inp, CreateEventIn):
+            raise TypeError(f"create_event expected CreateEventIn, got {type(inp).__name__}")
         world.events.append(inp)
         return CreateEventOut(ok=True, event_id=f"evt-{len(world.events)}")
 
