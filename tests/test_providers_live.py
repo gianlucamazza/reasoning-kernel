@@ -37,3 +37,18 @@ def test_provider_returns_valid_plan(provider_name: str) -> None:
     )
     assert isinstance(plan, Plan)
     assert plan.steps  # the model produced at least one step
+
+
+# Both current Deepseek models must round-trip through the same interface (the default and the
+# more capable variant). Legacy names (deepseek-chat/-reasoner) are deprecated aliases of v4-flash.
+_DEEPSEEK_MODELS = ["deepseek-v4-flash", "deepseek-v4-pro"]
+
+
+@pytest.mark.parametrize("model", _DEEPSEEK_MODELS)
+def test_deepseek_model_returns_valid_plan(model: str) -> None:
+    if not _PROVIDER_SECRETS["deepseek"].get_secret_value():
+        pytest.skip("deepseek key not configured")
+    provider = get_llm_provider("deepseek")
+    plan = call_structured(provider, _PROMPT, Plan, model=model, max_tokens=1024)
+    assert isinstance(plan, Plan)
+    assert plan.steps

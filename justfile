@@ -10,13 +10,13 @@ fix:
     uv run ruff check --fix src/ tests/
     uv run ruff format src/ tests/
 
-# type check (strict on schemas/, basic elsewhere — see pyproject)
+# type check (strict on schemas/ + kernel/, basic elsewhere — see pyproject)
 typecheck:
     uv run pyright
 
-# run tests (live tests excluded by default via addopts -m 'not live')
+# run tests with coverage (live tests excluded by default via addopts -m 'not live')
 test *args:
-    uv run pytest {{ args }}
+    uv run pytest --cov --cov-report=term-missing {{ args }}
 
 # run the live tests that hit real provider APIs (needs API keys)
 test-live:

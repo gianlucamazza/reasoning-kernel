@@ -13,6 +13,15 @@ from typing import Any, Protocol
 from pydantic import BaseModel
 
 
+class ReasonerError(Exception):
+    """A provider failed to return a usable structured result.
+
+    Covers empty/refused/malformed provider responses (not transport faults). The Conductor
+    treats it as a fail-closed condition — the run commits nothing — rather than a crash, so a
+    flaky reasoner can never produce a partial effect.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class LLMUsage:
     input_tokens: int = 0

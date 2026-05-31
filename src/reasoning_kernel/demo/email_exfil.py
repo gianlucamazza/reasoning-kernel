@@ -162,7 +162,8 @@ def main() -> None:
         summary_text="Your boss confirms the 3pm meeting tomorrow.",
     )
     _print_trace("1. Legitimate request", t1, w1)
-    assert w1.sent and w1.sent[0].to == USER_EMAIL
+    if not (w1.sent and w1.sent[0].to == USER_EMAIL):
+        raise RuntimeError("legitimate scenario should have sent the summary to the user")
 
     # 2. Injection, honest planner (Invariant A)
     w2 = make_world(INJECTED_BODY)
@@ -174,7 +175,8 @@ def main() -> None:
         summary_text="Your boss confirms the 3pm meeting tomorrow.",
     )
     _print_trace("2. Injected email, honest planner", t2, w2)
-    assert all(s.to == USER_EMAIL for s in w2.sent)  # never the attacker
+    if not all(s.to == USER_EMAIL for s in w2.sent):  # never the attacker
+        raise RuntimeError("injection scenario leaked an email to a non-user recipient")
 
     # 3. Malicious plan (Invariant B / provenance)
     w3 = make_world(CLEAN_BODY)
@@ -186,7 +188,8 @@ def main() -> None:
         summary_text="Alice <alice@example.com>; Bob <bob@example.com>",
     )
     _print_trace("3. Malicious plan: exfiltrate contacts", t3, w3)
-    assert not w3.sent  # blocked: nothing left the system
+    if w3.sent:  # blocked: nothing left the system
+        raise RuntimeError("malicious scenario was NOT blocked — data exfiltrated")
 
     print("\nResult: legitimate send committed; injection inert; exfiltration BLOCKED.")
 

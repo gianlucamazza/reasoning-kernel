@@ -122,12 +122,14 @@ def main() -> None:
     w1 = make_world(CLEAN_BODY)
     t1 = _run(w1, _sub_creates_event())
     _report("1. Benign email — sub-kernel creates the event", t1, w1)
-    assert len(w1.events) == 1 and not w1.sent
+    if not (len(w1.events) == 1 and not w1.sent):
+        raise RuntimeError("benign scenario should have created exactly one event and sent nothing")
 
     w2 = make_world(INJECTED_BODY)
     t2 = _run(w2, _sub_obeys_injection())
     _report("2. Injected email — sub-kernel confined to calendar.write", t2, w2)
-    assert not w2.sent and not w2.events
+    if w2.sent or w2.events:
+        raise RuntimeError("injected sub-kernel was NOT confined — it produced an effect")
 
     print("\nResult: delegated event created; injected exfiltration CONFINED by the reduced grant.")
 

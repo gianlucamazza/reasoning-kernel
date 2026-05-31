@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage
+from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError
 
 _BETA = "structured-outputs-2025-11-13"
 
@@ -62,7 +62,7 @@ class AnthropicProvider:
         response = self.client.messages.parse(**kwargs)
         parsed = response.parsed_output
         if parsed is None:
-            raise ValueError(f"Anthropic returned no parsed output for {schema.__name__}")
+            raise ReasonerError(f"Anthropic returned no parsed output for {schema.__name__}")
         u = response.usage
         usage = LLMUsage(
             input_tokens=getattr(u, "input_tokens", 0),
