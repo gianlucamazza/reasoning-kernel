@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from reasoning_kernel.schemas.ids import RunId, StepId
 from reasoning_kernel.schemas.plan import (
     ArgRef,
     ConstStep,
@@ -15,13 +16,13 @@ from reasoning_kernel.schemas.plan import (
 )
 
 
-def _sid(s: str):
-    return s  # StepId is a str NewType
+def _sid(s: str) -> StepId:
+    return StepId(s)
 
 
 def test_valid_plan_parses_and_discriminates() -> None:
     plan = Plan(
-        run_id="r",  # type: ignore[arg-type]
+        run_id=RunId("r"),
         steps=[
             ConstStep(id=_sid("a"), value="me@x"),
             ToolCallStep(id=_sid("b"), tool="read_inbox", args={}),
@@ -46,7 +47,7 @@ def test_valid_plan_parses_and_discriminates() -> None:
 def test_forward_reference_is_rejected() -> None:
     with pytest.raises(ValidationError):
         Plan(
-            run_id="r",  # type: ignore[arg-type]
+            run_id=RunId("r"),
             steps=[
                 ToolCallStep(id=_sid("b"), tool="send", args={"x": ArgRef(ref=_sid("later"))}),
                 ConstStep(id=_sid("later"), value=1),
@@ -58,7 +59,7 @@ def test_forward_reference_is_rejected() -> None:
 def test_duplicate_step_id_is_rejected() -> None:
     with pytest.raises(ValidationError):
         Plan(
-            run_id="r",  # type: ignore[arg-type]
+            run_id=RunId("r"),
             steps=[ConstStep(id=_sid("a"), value=1), ConstStep(id=_sid("a"), value=2)],
             final=_sid("a"),
         )
@@ -67,7 +68,7 @@ def test_duplicate_step_id_is_rejected() -> None:
 def test_final_must_exist() -> None:
     with pytest.raises(ValidationError):
         Plan(
-            run_id="r",  # type: ignore[arg-type]
+            run_id=RunId("r"),
             steps=[ConstStep(id=_sid("a"), value=1)],
             final=_sid("missing"),
         )
@@ -81,7 +82,7 @@ def test_free_text_is_not_a_plan() -> None:
 def test_subkernel_source_ref_is_forward_only() -> None:
     with pytest.raises(ValidationError):
         Plan(
-            run_id="r",  # type: ignore[arg-type]
+            run_id=RunId("r"),
             steps=[
                 SubKernelStep(
                     id=_sid("d"),

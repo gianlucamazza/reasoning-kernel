@@ -26,6 +26,7 @@ from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.limits import RunLimits
 from reasoning_kernel.schemas.plan import (
     ConstStep,
+    PlanStep,
     QuarantineParseStep,
     SubKernelStep,
     ToolCallStep,
@@ -134,7 +135,7 @@ class Interpreter:
         """A fail-closed outcome: the trace so far, with nothing committed."""
         return RunResult(trace=self._trace.snapshot(), committed=None)
 
-    def _eval_step(self, step: object, ctx: RunContext) -> TaintedValue:
+    def _eval_step(self, step: PlanStep, ctx: RunContext) -> TaintedValue:
         if isinstance(step, ConstStep):
             # A planner literal inherits the (trusted) query's label — not hardcoded trust.
             return TaintedValue(value=step.value, label=ctx.query.label, produced_by=step.id)
@@ -162,9 +163,9 @@ class Interpreter:
                 raise _RunAborted(f"effect count exceeds max_effects {self._limits.max_effects}")
             named = {k: self._store.resolve(a) for k, a in step.args.items()}
             return self._dispatcher.dispatch(step.tool, named)
-        if isinstance(step, SubKernelStep):
-            return self._eval_subkernel(step, ctx)
-        raise TypeError(f"unknown step kind: {type(step).__name__}")
+        # Only SubKernelStep remains. This is exhaustive over PlanStep: the param type makes pyright
+        # error here if a new step kind is added to the union but not handled above.
+        return self._eval_subkernel(step, ctx)
 
     def _eval_subkernel(self, step: SubKernelStep, ctx: RunContext) -> TaintedValue:
         if self._limits.max_depth is not None and self._depth + 1 > self._limits.max_depth:
@@ -221,5 +222,5 @@ class Interpreter:
             pool.shutdown(wait=False, cancel_futures=True)
 
 
-def _tool_name(step: object) -> str:
+def _tool_name(step: PlanStep) -> str:
     return step.tool if isinstance(step, ToolCallStep) else "<none>"

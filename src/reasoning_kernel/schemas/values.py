@@ -18,7 +18,7 @@ class TaintedValue(BaseModel):
 
     ``value`` is typed ``object`` rather than ``Any`` deliberately: the kernel never inspects the
     payload, so the stricter type both documents that and keeps the trusted core free of ``Any``
-    leakage (the ``kernel`` package is type-checked in strict mode).
+    leakage (the ``kernel`` and ``memory`` packages are type-checked in strict mode).
     """
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)

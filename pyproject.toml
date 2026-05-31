@@ -45,6 +45,7 @@ pythonVersion = "3.12"
 strict = [
   "src/reasoning_kernel/schemas", # contract layer
   "src/reasoning_kernel/kernel",  # the trusted core: interpreter, gate, dispatcher, taint
+  "src/reasoning_kernel/memory",  # trusted core: ValueStore (tainted-value custody) + TraceWriter
 ] # strict on the security-critical layers; integrations stay basic
 
 [tool.pytest.ini_options]

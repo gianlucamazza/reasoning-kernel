@@ -7,6 +7,7 @@ from conftest import ctx, trusted
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.taint import join_labels, quarantine_label, result_label
 from reasoning_kernel.schemas.capability import Capability, CapabilitySet, EffectLevel
+from reasoning_kernel.schemas.ids import StepId
 from reasoning_kernel.schemas.policy import VerifierVerdict
 from reasoning_kernel.schemas.provenance import DataSubject, ProvenanceLabel, Source
 from reasoning_kernel.schemas.registry import ToolSpec
@@ -74,7 +75,7 @@ def test_third_party_routes_to_declass_even_when_readers_allow() -> None:
             readers=frozenset({CAP_SEND}),  # readers WOULD allow mail.send
             subjects=frozenset({DataSubject.THIRD_PARTY}),
         ),
-        produced_by="t",  # type: ignore[arg-type]
+        produced_by=StepId("t"),
     )
     recorder = _RecordingDeclass()
     gate = Gate(CapabilitySet(granted=frozenset({CAP_SEND})), recorder)
