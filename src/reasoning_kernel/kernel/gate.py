@@ -64,15 +64,19 @@ class Gate:
             has_third_party = any(v.label.has_third_party for v in named_args.values())
             if tainted or has_third_party:
                 # Permitted without declassification ONLY if the tool declares capabilities, every
-                # tainted arg may flow into all of them, AND no argument carries third-party data.
-                # Two reasons it is otherwise routed to declassification:
+                # tainted arg carries an EXPLICIT readers set covering all of them, AND no argument
+                # carries third-party data. Three reasons it is otherwise routed to declass:
                 #  - an empty required_caps set is not a free pass (capless WRITE would exfiltrate);
-                #  - third-party data must never be auto-permitted out, regardless of readers.
+                #  - third-party data must never be auto-permitted out, regardless of readers;
+                #  - readers=None is reserved for purely trusted data (provenance.py): a tainted
+                #    value carrying it (e.g. a Q-LLM parse of a trusted const) has never had its
+                #    flow scoped, so it must not be auto-permitted into a WRITE.
                 permitted = (
                     not has_third_party
                     and bool(spec.required_caps)
                     and all(
-                        v.label.allows_reader(cap) for cap in spec.required_caps for v in tainted
+                        v.label.readers is not None and spec.required_caps <= v.label.readers
+                        for v in tainted
                     )
                 )
                 if not permitted:

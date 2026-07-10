@@ -14,6 +14,7 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from reasoning_kernel.reasoner.base import LLMProvider
+from reasoning_kernel.reasoner.factory import default_model_for
 from reasoning_kernel.reasoner.parse import call_structured
 from reasoning_kernel.schemas.capability import CapabilitySet
 from reasoning_kernel.schemas.ids import RunId
@@ -52,10 +53,12 @@ class PLLM:
     """
 
     def __init__(
-        self, provider: LLMProvider, *, model: str = "fake", grant: CapabilitySet | None = None
+        self, provider: LLMProvider, *, model: str | None = None, grant: CapabilitySet | None = None
     ) -> None:
+        # No silent "fake" default toward a real provider: an omitted model resolves from settings
+        # at construction time, so a misconfiguration fails here, not as a 404 deep in a run.
         self._provider = provider
-        self._model = model
+        self._model = model or default_model_for(provider.name)
         self._grant = grant if grant is not None else CapabilitySet(granted=frozenset())
 
     @property
@@ -77,9 +80,9 @@ class PLLM:
 class QLLM:
     """Quarantined parser. Untrusted; no tool capability; returns data only."""
 
-    def __init__(self, provider: LLMProvider, *, model: str = "fake") -> None:
+    def __init__(self, provider: LLMProvider, *, model: str | None = None) -> None:
         self._provider = provider
-        self._model = model
+        self._model = model or default_model_for(provider.name)
 
     @property
     def grant(self) -> CapabilitySet:

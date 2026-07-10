@@ -64,8 +64,10 @@ def main() -> None:
     )
     trace = (
         Interpreter(
-            planner=PLLM(provider, grant=DEMO_GRANT),
-            quarantine=QLLM(provider),
+            # model= is explicit: "failing" is a demo-only provider name that the strict
+            # default-model resolution rightly refuses to resolve.
+            planner=PLLM(provider, model="demo-model", grant=DEMO_GRANT),
+            quarantine=QLLM(provider, model="demo-model"),
             dispatcher=dispatcher,
             trace=trace_writer,
             q_schemas=Q_SCHEMAS,

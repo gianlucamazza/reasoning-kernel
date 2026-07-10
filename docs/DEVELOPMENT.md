@@ -61,16 +61,16 @@ Keys are accepted under either their conventional bare name or an `RK_`-prefixed
 
 | Provider  | Env var                                  | Default model (more capable variant)        |
 |-----------|------------------------------------------|---------------------------------------------|
-| Anthropic | `ANTHROPIC_API_KEY` / `RK_ANTHROPIC_API_KEY` | `claude-sonnet-4-6` (`claude-opus-4-8`) |
+| Anthropic | `ANTHROPIC_API_KEY` / `RK_ANTHROPIC_API_KEY` | `claude-sonnet-5` (`claude-opus-4-8`) |
 | OpenAI    | `OPENAI_API_KEY` / `RK_OPENAI_API_KEY`       | `gpt-5.5` (`gpt-5.5-pro`)               |
 | Deepseek  | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY`   | `deepseek-v4-flash` (`deepseek-v4-pro`) |
 
 Other overrides (defaults in `config.py`): `RK_LLM_PROVIDER_DEFAULT`, `RK_LLM_MODEL_*`,
-`RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`. A live test or demo **skips** any provider whose
+`RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`, `RK_LLM_MAX_TOKENS`. A live test or demo **skips** any provider whose
 key is absent, so partial configuration is fine.
 
 Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
-ids are current as of May 2026; the defaults are the cost-effective tier, the variants the
+ids are current as of July 2026; the defaults are the cost-effective tier, the variants the
 frontier tier. For Deepseek the legacy `deepseek-chat` / `deepseek-reasoner` names still resolve as
 deprecated aliases of `deepseek-v4-flash` but should not be used.
 

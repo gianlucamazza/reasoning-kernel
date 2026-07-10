@@ -12,7 +12,7 @@ from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
 from reasoning_kernel.memory.trace import TraceWriter
-from reasoning_kernel.reasoner.base import LLMProvider, ReasonerError
+from reasoning_kernel.reasoner.base import LLMProvider, ReasonerError, TransportError
 from reasoning_kernel.reasoner.factory import default_model_for, get_llm_provider
 from reasoning_kernel.reasoner.fake import FakeProvider
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
@@ -73,6 +73,7 @@ __all__ = [
     "ToolRegistry",
     "ToolSpec",
     "TraceWriter",
+    "TransportError",
     "TrustedQuery",
     "VerifierVerdict",
     "default_model_for",

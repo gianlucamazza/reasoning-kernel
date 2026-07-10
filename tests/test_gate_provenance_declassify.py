@@ -40,6 +40,28 @@ def test_tainted_write_allowed_when_declassified() -> None:
     assert verdict.allowed
 
 
+def test_tainted_write_with_covering_readers_skips_declassification() -> None:
+    # The fast-path: every tainted arg carries an EXPLICIT readers set covering the tool's
+    # required capabilities → permitted without consulting the declassifier (DenyAll would deny).
+    gate = Gate(GRANT, DenyAll())
+    args = {
+        "to": trusted("user@example.com"),
+        "body": tainted("summary", readers=frozenset({CAP_MAIL_SEND})),
+    }
+    verdict = gate.check(SEND_SPEC, args, ctx())
+    assert verdict.allowed  # declass never consulted: readers explicitly permit the flow
+
+
+def test_tainted_write_with_unrestricted_readers_requires_declassification() -> None:
+    # readers=None is reserved for purely trusted data. A tainted value carrying it (e.g. a Q-LLM
+    # parse of a trusted const preserves the source's readers=None) has never had its flow scoped,
+    # so it must be routed to declassification — NOT auto-permitted.
+    gate = Gate(GRANT, DenyAll())
+    args = {"to": trusted("user@example.com"), "body": tainted("q-llm output", readers=None)}
+    verdict = gate.check(SEND_SPEC, args, ctx())
+    assert not verdict.allowed
+
+
 def test_untainted_write_needs_no_declassification() -> None:
     gate = Gate(GRANT, DenyAll())  # would deny if consulted
     args = {"to": trusted("anyone@example.com"), "body": trusted("hello")}

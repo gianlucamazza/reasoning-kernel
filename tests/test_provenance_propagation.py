@@ -20,6 +20,25 @@ def test_join_unions_sources_and_marks_derived() -> None:
     assert joined.is_tainted
 
 
+def test_join_of_trusted_only_inputs_is_not_tainted() -> None:
+    # DERIVED marks combination for the audit trail but is not itself taint: merging two values
+    # derived solely from the controlled query must not manufacture untrust.
+    a = ProvenanceLabel(sources=frozenset({Source.USER_QUERY}), readers=None)
+    b = ProvenanceLabel(sources=frozenset({Source.USER_QUERY}), readers=None)
+    joined = join_labels([a, b])
+    assert Source.DERIVED in joined.sources
+    assert not joined.is_tainted
+
+
+def test_quarantine_of_trusted_source_is_tainted_with_unrestricted_readers() -> None:
+    # A Q-LLM parse of a trusted blob keeps readers=None (nothing ever scoped its flow) while
+    # gaining the Q_LLM taint. The gate must therefore never treat readers=None as an auto-pass
+    # for tainted values — pinned by the gate tests.
+    out = quarantine_label(ProvenanceLabel.trusted())
+    assert out.is_tainted
+    assert out.readers is None
+
+
 def test_join_intersects_readers_with_none_identity() -> None:
     a = ProvenanceLabel(sources=frozenset({Source.USER_QUERY}), readers=None)  # unrestricted
     b = ProvenanceLabel(sources=frozenset({Source.TOOL_READ}), readers=frozenset({CAP_X, CAP_Y}))

@@ -12,7 +12,7 @@ from reasoning_kernel.schemas.values import TaintedValue
 def tainted(
     value: object,
     *,
-    readers: frozenset[Capability] = frozenset(),
+    readers: frozenset[Capability] | None = frozenset(),
     subjects: frozenset[DataSubject] = frozenset(),
 ) -> TaintedValue:
     return TaintedValue(

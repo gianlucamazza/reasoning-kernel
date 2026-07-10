@@ -4,6 +4,49 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-07-10
+
+A correctness release for the gate's provenance stage, plus fail-closed hardening of the provider
+integrations. No API removals; two behavior changes in the gate/taint semantics (both strictly
+safety-improving) and stricter model resolution.
+
+### Fixed
+
+- **Gate: a tainted value with unrestricted `readers` no longer skips declassification.**
+  `readers=None` is reserved for purely trusted data, but `quarantine_label` preserves the source's
+  readers — so a Q-LLM parse of a *trusted* const yielded a value that was tainted (Q_LLM) yet
+  carried `readers=None`, and the gate's stage 3 auto-permitted it into a WRITE without consulting
+  the declassification policy. The fast-path now requires an **explicit** readers set covering the
+  tool's required capabilities; unscoped tainted flows go through the declassifier. (Regression
+  tests at gate level and end-to-end: a recipient laundered through the Q-LLM is now blocked by the
+  policy instead of auto-committed.)
+- **Taint: `DERIVED` is no longer counted as an untrusted source.** Merging values derived solely
+  from the trusted query no longer manufactures taint (which caused spurious denials in policies
+  keyed on `is_tainted`); taint derives only from the actual presence of `TOOL_READ` / `Q_LLM` in
+  the joined sources. `DERIVED` remains on the label as an audit marker. The two fixes land
+  together deliberately: each previously masked the other.
+- **`RK_LLM_MAX_TOKENS` now has an effect.** `call_structured` / `parse_with_schema` defaulted to a
+  private module constant, silently ignoring the `settings.llm_max_tokens` override; they now read
+  settings (lazily) as the single source of truth.
+
+### Changed
+
+- **Transport faults fail closed with an audit record.** Provider API errors (rate limit exhausted,
+  5xx, network, SDK timeout) are wrapped in a new `TransportError(ReasonerError)` by the Anthropic
+  and OpenAI/Deepseek providers, so an in-flight run ends with a terminal trace event
+  (`PlanRejected`/`RunErrored`) instead of an unrecorded traceback.
+- **Model resolution is strict and construction-time.** `PLLM`/`QLLM` no longer default to
+  `model="fake"` (a real provider without an explicit model got a 404 deep inside a run); an
+  omitted model resolves via `default_model_for(provider.name)` at construction. `default_model_for`
+  now raises `ValueError` for unknown providers instead of silently falling back to the Anthropic
+  model, and maps `"fake"` to the FakeProvider's ignored sentinel. `call_structured` requires
+  `model=` explicitly.
+- **Anthropic default model refreshed**: `claude-sonnet-4-6` → `claude-sonnet-5` (comment variant
+  stays `claude-opus-4-8`); `.env.example` and `docs/DEVELOPMENT.md` updated, including the
+  previously undocumented `RK_LLM_TIMEOUT_SECONDS` / `RK_LLM_MAX_TOKENS` overrides.
+- **Branch coverage enabled** (`coverage: branch = true`): line coverage alone hid the gate's
+  untested readers fast-path; the new gate tests pin both directions of that branch.
+
 ## [0.4.1] - 2026-05-31
 
 ### Changed
@@ -95,6 +138,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.4.2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.2
 [0.4.1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.1
 [0.4.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.0
 [0.3.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.3.0

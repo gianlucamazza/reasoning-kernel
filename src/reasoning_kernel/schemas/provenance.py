@@ -16,12 +16,12 @@ from reasoning_kernel.schemas.capability import Capability
 
 
 class Source(StrEnum):
-    """Origin of a value. ``USER_QUERY`` is trusted; the rest taint."""
+    """Origin of a value. ``TOOL_READ`` and ``Q_LLM`` taint; ``DERIVED`` is an audit marker."""
 
     USER_QUERY = "user_query"  # the controlled query and planner literals (trusted)
     TOOL_READ = "tool_read"  # anything a READ tool returned (untrusted)
     Q_LLM = "q_llm"  # anything the quarantined reasoner produced (untrusted)
-    DERIVED = "derived"  # combined from >1 input
+    DERIVED = "derived"  # combined from >1 input (audit marker; not itself taint)
 
 
 class DataSubject(StrEnum):
@@ -31,7 +31,10 @@ class DataSubject(StrEnum):
     THIRD_PARTY = "third_party"  # anyone else (contacts, other inboxes, ...)
 
 
-_UNTRUSTED: frozenset[Source] = frozenset({Source.TOOL_READ, Source.Q_LLM, Source.DERIVED})
+# Taint derives only from the presence of an actually-untrusted origin. DERIVED records that a
+# value combines >1 input but does not taint by itself: a merge of purely trusted inputs stays
+# trusted (the union of real sources carries the taint whenever any input was untrusted).
+_UNTRUSTED: frozenset[Source] = frozenset({Source.TOOL_READ, Source.Q_LLM})
 
 
 class ProvenanceLabel(BaseModel):
