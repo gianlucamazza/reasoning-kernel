@@ -1,5 +1,8 @@
 set dotenv-load := true
 
+# everything CI runs, locally, in one command
+check: lint typecheck test
+
 # lint (ruff check + format check)
 lint:
     uv run ruff check src/ tests/

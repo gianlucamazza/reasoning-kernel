@@ -59,6 +59,7 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 | Reasoner(s)    | `reasoner/` (multi-provider)    | a provider or the interface     |
 | Conductor      | `kernel/interpreter.py`         | the execution loop              |
 | Verifier       | `kernel/gate.py`, `effects.py`  | verification policy             |
+| Tool catalog   | `tools/registry.py`             | sole holder of tool callables   |
 | Memory / Trace | `memory/`                       | durability / audit format       |
 
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a

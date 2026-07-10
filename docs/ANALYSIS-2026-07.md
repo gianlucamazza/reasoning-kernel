@@ -4,6 +4,33 @@ Analisi completa della codebase alla versione **0.4.1** (branch `main`, commit `
 condotta su tre assi: core fidato (kernel/memory/context), livello di integrazione LLM
 (reasoner/config/tools), e qualità/DevEx (test, CI, packaging, documentazione).
 
+## Stato di avanzamento (aggiornato 2026-07-10)
+
+**✅ Tranche 1 (0.4.2) — completata su questo branch.** Corretti e testati: A1 (gate:
+`readers=None` tainted → declassificazione, con regressione end-to-end), M1 (`DERIVED` fuori
+da `_UNTRUSTED`), fast-path del gate testato + branch coverage attiva, `RK_LLM_MAX_TOKENS`
+cablato, `model` risolto strettamente alla costruzione dei ruoli (`default_model_for` rifiuta
+provider ignoti), `TransportError` per i guasti di trasporto Anthropic/OpenAI/Deepseek
+(esportato dall'API pubblica), test `AnthropicProvider`, default `claude-sonnet-5`,
+CHANGELOG/README/DEVELOPMENT aggiornati. Suite: 111 test, coverage ~94% (branch).
+
+**✅ Consolidamento drift (stesso branch):** pre-commit riallineato a justfile/CI (ruff e
+pyright come hook local via `uv run`, stessa versione di uv.lock e stesso scope di
+`just typecheck`), target aggregato `just check`, `tools/` aggiunto al layout di CLAUDE.md e
+alla role map del README.
+
+> Nota: il passaggio a `uv sync --all-extras --locked` in `.github/workflows/ci.yml` (entrambi
+> i job) è pronto ma NON è su questo branch: il token dell'app GitHub non ha il permesso
+> `workflows`, quindi va applicato manualmente insieme agli altri interventi CI aperti.
+
+**⬜ Ancora aperti:** tranche 0.5.0 (RunLimits globali sui sub-kernel — M3/1.3,
+`ToolExecutionError` + evento di trace, fallback strict-schema robusto — 1.1, trace writer
+per-run — M4, export `LLMResult`/`LLMUsage` — 3.1), infra release (build unica promossa +
+gate di test/versione — 2.1/2.2, dependabot — 2.3, pinning SHA — 2.4, matrice 3.14 — 2.7,
+`permissions` in ci.yml — 2.5, `uv build` + `twine check` — 2.9), spec/docs (semantica limits
+— 4.3, regola "argomenti che escono ⇒ WRITE" — M2, CONFORMANCE.md — 4.4, metadati pyproject
+— §3), e i P2 restanti (hardening prompt, test minori, audit trace).
+
 ## Stato di salute (baseline verificata)
 
 | Check | Esito |

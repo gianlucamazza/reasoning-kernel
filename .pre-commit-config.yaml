@@ -9,18 +9,25 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.0
-    hooks:
-      - id: ruff
-        args: ["--fix"]
-      - id: ruff-format
-
+  # Ruff and pyright run as local hooks through uv so the hook, `just lint`/`just typecheck`,
+  # and CI all execute the exact versions pinned in uv.lock — no pinned-mirror drift.
   - repo: local
     hooks:
-      - id: pyright
-        name: pyright (strict on schemas + kernel + memory)
+      - id: ruff-check
+        name: ruff check --fix (uv.lock version, same as `just fix`)
         language: system
-        entry: uv run pyright src/reasoning_kernel/schemas src/reasoning_kernel/kernel src/reasoning_kernel/memory
+        entry: uv run ruff check --fix src/ tests/
+        pass_filenames: false
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: ruff format (uv.lock version, same as `just fix`)
+        language: system
+        entry: uv run ruff format src/ tests/
+        pass_filenames: false
+        types_or: [python, pyi]
+      - id: pyright
+        name: pyright (same scope as `just typecheck` — strict dirs set in pyproject)
+        language: system
+        entry: uv run pyright
         pass_filenames: false
         types: [python]

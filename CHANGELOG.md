@@ -46,6 +46,11 @@ safety-improving) and stricter model resolution.
   previously undocumented `RK_LLM_TIMEOUT_SECONDS` / `RK_LLM_MAX_TOKENS` overrides.
 - **Branch coverage enabled** (`coverage: branch = true`): line coverage alone hid the gate's
   untested readers fast-path; the new gate tests pin both directions of that branch.
+- **Toolchain drift eliminated.** pre-commit now runs ruff and pyright as local hooks through
+  `uv run` (same versions as `uv.lock`, same scope as `just lint`/`just typecheck` and CI, instead
+  of a stale pinned ruff mirror and a partial pyright scope); a new aggregate `just check` runs
+  lint + typecheck + test exactly as CI does. `CLAUDE.md` and the README role map now include
+  `tools/` (the registry is part of the no-bypass argument).
 
 ## [0.4.1] - 2026-05-31
 

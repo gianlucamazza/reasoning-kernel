@@ -16,16 +16,18 @@ boundaries by construction.
 
 ## Stack & layout
 - Python, `uv` (uv.lock), `pyproject.toml`, `just`. Lint Ruff, types pyright.
-- `src/reasoning_kernel/`: `context/` · `kernel/` (gate) · `reasoner/` · `memory/` · `schemas/` · `demo/`
+- `src/reasoning_kernel/`: `context/` · `kernel/` (gate) · `reasoner/` · `memory/` · `schemas/` ·
+  `tools/` (registry — sole holder of tool callables, part of the no-bypass argument) · `demo/`
 
 ## Commands
 ```bash
+just check       # lint + typecheck + test (everything CI runs)
 just lint        # ruff
 just fix         # ruff --fix
 just typecheck   # pyright
 just test-live   # tests against live model
 just demo        # run demo (also: demo-live, demo-subkernel, demo-limits, demo-merge, demo-reasoner-error)
-uv sync          # install/refresh env
+uv sync          # install/refresh env (--all-extras for providers + dev tools)
 ```
 
 ## Conventions

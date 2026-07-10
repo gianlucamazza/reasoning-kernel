@@ -16,6 +16,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 
 | Command            | What it does                                                              |
 |--------------------|--------------------------------------------------------------------------|
+| `just check`       | `lint` + `typecheck` + `test` — everything CI runs, in one command        |
 | `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
 | `just demo-subkernel` | §5.4 composition demo: untrusted content delegated at a reduced grant  |
 | `just demo-limits` | Termination demo: `RunLimits` aborts the run closed before the second effect |
