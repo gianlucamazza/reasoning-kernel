@@ -59,6 +59,7 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 | Reasoner(s)    | `reasoner/` (multi-provider)    | a provider or the interface     |
 | Conductor      | `kernel/interpreter.py`         | the execution loop              |
 | Verifier       | `kernel/gate.py`, `effects.py`  | verification policy             |
+| Tool catalog   | `tools/registry.py`             | sole holder of tool callables   |
 | Memory / Trace | `memory/`                       | durability / audit format       |
 
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
@@ -161,15 +162,19 @@ result = kernel.run(ctx)             # RunResult(trace, committed); committed is
 
 - **Provenance is multi-dimensional**: a `ProvenanceLabel` carries *origin* (`sources`), *where it may
   flow* (`readers`), and *whose data it is* (`subjects`). Third-party data is never auto-released into a
-  WRITE — even to the requesting user — and the Q-LLM cannot launder any of these dimensions.
+  WRITE — even to the requesting user — and the Q-LLM cannot launder any of these dimensions. A tainted
+  value whose flow was never scoped (`readers=None` is reserved for purely trusted data) is likewise
+  never auto-permitted into a WRITE: it is routed to the declassifier like any other tainted flow.
 - **Invariant A is typed**: the trusted channel is a `TrustedQuery` (text + label); `const`/inline
   literals DERIVE their label from it, so the trust assumption is explicit rather than by convention.
 - **Termination**: `RunLimits` bounds steps / effects / q-parses (and an optional per-call timeout); a
   run exceeding a bound aborts closed (`RunAborted`), committing nothing further. The timeout abort is
   prompt — it does not block waiting on the hung call (`kernel/interpreter.py:_call_reasoner`).
 - **Reasoner failure is fail-closed**: a provider that returns no usable output (empty / refused /
-  malformed) raises `ReasonerError` (`reasoner/base.py`); the Conductor records it and commits
-  nothing, rather than crashing or acting on a partial result. Treating the model as untrusted compute
+  malformed) raises `ReasonerError` (`reasoner/base.py`), and a provider call that fails in transport
+  (rate limit exhausted, 5xx, network fault) raises its `TransportError` subclass; either way the
+  Conductor records a terminal trace event and commits nothing, rather than crashing or acting on a
+  partial result. Treating the model as untrusted compute
   means a flaky reasoner can never produce a half-applied effect.
 - **Capability composition (§5.4)**: every reasoner is bound to a `CapabilitySet`; the kernel rejects a
   reasoner whose grant exceeds the dispatcher's — a child can never widen authority. A `SubKernelStep`

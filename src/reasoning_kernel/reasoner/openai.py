@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError
+from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
 
 
 def _is_strict_schema_error(exc: Exception) -> bool:
@@ -80,8 +80,15 @@ class OpenAIProvider:
                 raise ReasonerError("provider returned no parsed content")
         except openai.BadRequestError as exc:
             if not _is_strict_schema_error(exc):
-                raise
-            completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
+                raise TransportError(f"OpenAI request rejected: {exc}") from exc
+            try:
+                completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
+            except openai.APIError as fallback_exc:
+                raise TransportError(
+                    f"OpenAI API failure in JSON-mode fallback: {fallback_exc}"
+                ) from fallback_exc
+        except openai.APIError as exc:
+            raise TransportError(f"OpenAI API failure: {exc}") from exc
 
         u = getattr(completion, "usage", None)
         usage = LLMUsage(

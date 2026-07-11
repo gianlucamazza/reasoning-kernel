@@ -30,3 +30,28 @@ def test_parse_with_schema_routes_through_factory(monkeypatch: pytest.MonkeyPatc
 
     out = parse_with_schema("summarize this", _Out, provider="anything")
     assert out.x == 7
+
+
+def test_call_structured_defaults_max_tokens_from_settings() -> None:
+    # The RK_LLM_MAX_TOKENS override must actually reach the provider call: max_tokens defaults
+    # from settings.llm_max_tokens (single source of truth), not from a module constant.
+    from reasoning_kernel.config import settings
+    from reasoning_kernel.reasoner.base import LLMResult, LLMUsage
+    from reasoning_kernel.reasoner.parse import call_structured
+
+    seen: dict[str, int] = {}
+
+    class _Capturing:
+        name = "capturing"
+        supports_prompt_cache = False
+        supports_structured_output = True
+
+        def parse(self, *, schema: type[_Out], max_tokens: int, **_kw: object) -> LLMResult[_Out]:
+            seen["max_tokens"] = max_tokens
+            return LLMResult(data=schema(), usage=LLMUsage(), model="m", provider=self.name)
+
+    call_structured(_Capturing(), "p", _Out, model="m")
+    assert seen["max_tokens"] == settings.llm_max_tokens
+
+    call_structured(_Capturing(), "p", _Out, model="m", max_tokens=99)
+    assert seen["max_tokens"] == 99

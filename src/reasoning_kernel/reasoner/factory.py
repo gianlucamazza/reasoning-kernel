@@ -30,10 +30,23 @@ def get_llm_provider(name: str | None = None) -> LLMProvider:
 
 
 def default_model_for(provider_name: str) -> str:
+    """The configured default model for a known provider.
+
+    Unknown providers are an error, not a silent fallback — a wrong model ID sent to the wrong
+    provider would only surface as an opaque 404 at call time. ``fake`` maps to the sentinel the
+    FakeProvider ignores, so the role wrappers resolve it uniformly.
+    """
     from reasoning_kernel.config import settings
 
-    return {
+    models = {
         "anthropic": settings.llm_model_anthropic,
         "openai": settings.llm_model_openai,
         "deepseek": settings.llm_model_deepseek,
-    }.get(provider_name, settings.llm_model_anthropic)
+        "fake": "fake",
+    }
+    try:
+        return models[provider_name]
+    except KeyError:
+        raise ValueError(
+            f"no default model for provider {provider_name!r}; pass model= explicitly"
+        ) from None

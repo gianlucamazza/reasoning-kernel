@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError
+from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
 
 _BETA = "structured-outputs-2025-11-13"
 
@@ -59,7 +59,12 @@ class AnthropicProvider:
                 block["cache_control"] = {"type": "ephemeral"}
             kwargs["system"] = [block]
 
-        response = self.client.messages.parse(**kwargs)
+        import anthropic
+
+        try:
+            response = self.client.messages.parse(**kwargs)
+        except anthropic.APIError as exc:
+            raise TransportError(f"Anthropic API failure: {exc}") from exc
         parsed = response.parsed_output
         if parsed is None:
             raise ReasonerError(f"Anthropic returned no parsed output for {schema.__name__}")

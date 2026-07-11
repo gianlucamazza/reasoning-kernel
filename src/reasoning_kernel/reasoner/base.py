@@ -16,9 +16,19 @@ from pydantic import BaseModel
 class ReasonerError(Exception):
     """A provider failed to return a usable structured result.
 
-    Covers empty/refused/malformed provider responses (not transport faults). The Conductor
-    treats it as a fail-closed condition — the run commits nothing — rather than a crash, so a
-    flaky reasoner can never produce a partial effect.
+    Covers empty/refused/malformed provider responses. The Conductor treats it as a fail-closed
+    condition — the run commits nothing — rather than a crash, so a flaky reasoner can never
+    produce a partial effect.
+    """
+
+
+class TransportError(ReasonerError):
+    """The provider call itself failed: rate limit exhausted, 5xx, network fault, SDK timeout,
+    or a request the provider rejected outright.
+
+    Subclassing ``ReasonerError`` keeps the Conductor's handling uniform: the run fails closed
+    and the trace records a terminal event, instead of the run vanishing behind a raw traceback
+    with no audit record.
     """
 
 

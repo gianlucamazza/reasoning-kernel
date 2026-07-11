@@ -11,7 +11,13 @@ from pydantic import BaseModel
 
 from reasoning_kernel.reasoner.base import LLMProvider
 
-DEFAULT_MAX_TOKENS = 4096
+
+def _default_max_tokens() -> int:
+    # Single source of truth: settings.llm_max_tokens (RK_LLM_MAX_TOKENS). Imported lazily, like
+    # everywhere else settings is consumed, to keep package import side-effect free.
+    from reasoning_kernel.config import settings
+
+    return settings.llm_max_tokens
 
 
 def call_structured[T: BaseModel](
@@ -20,9 +26,11 @@ def call_structured[T: BaseModel](
     schema: type[T],
     *,
     system: str | None = None,
-    model: str = "fake",
-    max_tokens: int = DEFAULT_MAX_TOKENS,
+    model: str,
+    max_tokens: int | None = None,
 ) -> T:
+    if max_tokens is None:
+        max_tokens = _default_max_tokens()
     result = provider.parse(
         prompt=prompt,
         schema=schema,
@@ -41,7 +49,7 @@ def parse_with_schema[T: BaseModel](
     system: str | None = None,
     model: str | None = None,
     provider: str | None = None,
-    max_tokens: int = DEFAULT_MAX_TOKENS,
+    max_tokens: int | None = None,
 ) -> T:
     from reasoning_kernel.reasoner.factory import default_model_for, get_llm_provider
 

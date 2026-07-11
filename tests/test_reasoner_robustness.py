@@ -19,7 +19,14 @@ from reasoning_kernel.kernel.effects import EffectDispatcher
 from reasoning_kernel.kernel.gate import Gate
 from reasoning_kernel.kernel.interpreter import Interpreter
 from reasoning_kernel.memory.trace import TraceWriter
-from reasoning_kernel.reasoner.base import LLMProvider, LLMResult, LLMUsage, ReasonerError
+from reasoning_kernel.reasoner.anthropic import AnthropicProvider
+from reasoning_kernel.reasoner.base import (
+    LLMProvider,
+    LLMResult,
+    LLMUsage,
+    ReasonerError,
+    TransportError,
+)
 from reasoning_kernel.reasoner.openai import OpenAIProvider
 from reasoning_kernel.reasoner.roles import PLLM, QLLM
 from reasoning_kernel.schemas.capability import CapabilitySet
@@ -41,9 +48,11 @@ def _interp(provider: LLMProvider, limits: RunLimits) -> tuple[Interpreter, RunC
     trace = TraceWriter(ctx.run_id)
     grant = CapabilitySet(granted=frozenset())
     dispatcher = EffectDispatcher(ToolRegistry(), Gate(grant, DenyAll()), trace, ctx)
+    # model= is explicit: these providers have test-only names ("error", "hung") that the strict
+    # default_model_for resolution rightly refuses to resolve.
     interp = Interpreter(
-        planner=PLLM(provider, grant=grant),
-        quarantine=QLLM(provider),
+        planner=PLLM(provider, model="test-model", grant=grant),
+        quarantine=QLLM(provider, model="test-model"),
         dispatcher=dispatcher,
         trace=trace,
         q_schemas={},
@@ -162,3 +171,106 @@ def test_openai_happy_path_returns_data() -> None:
     prov = _openai_with(_Completion([_Choice(_Msg(parsed=_Out(x=7)))]))
     result = prov.parse(prompt="p", schema=_Out, system=None, model="m", max_tokens=16)
     assert result.data.x == 7
+
+
+# --- transport faults map to TransportError (a ReasonerError → the run fails closed) --------
+class _RaisingCompletions:
+    def __init__(self, exc: Exception) -> None:
+        self._exc = exc
+
+    def parse(self, **_kwargs: Any) -> Any:
+        raise self._exc
+
+    def create(self, **_kwargs: Any) -> Any:
+        raise self._exc
+
+
+class _RaisingOpenAIClient:
+    def __init__(self, exc: Exception) -> None:
+        self.chat = _FakeChat.__new__(_FakeChat)
+        self.chat.completions = _RaisingCompletions(exc)  # type: ignore[assignment]
+
+
+def test_openai_connection_error_maps_to_transport_error() -> None:
+    import httpx
+    import openai
+
+    exc = openai.APIConnectionError(request=httpx.Request("POST", "https://api.openai.com"))
+    prov = OpenAIProvider(client=_RaisingOpenAIClient(exc))
+    try:
+        prov.parse(prompt="p", schema=_Out, system=None, model="m", max_tokens=16)
+    except TransportError as caught:
+        assert "OpenAI" in str(caught)
+    else:
+        raise AssertionError("expected TransportError")
+
+
+def test_openai_non_schema_bad_request_maps_to_transport_error() -> None:
+    import httpx
+    import openai
+
+    response = httpx.Response(400, request=httpx.Request("POST", "https://api.openai.com"), json={})
+    exc = openai.BadRequestError("invalid model", response=response, body=None)
+    prov = OpenAIProvider(client=_RaisingOpenAIClient(exc))
+    try:
+        prov.parse(prompt="p", schema=_Out, system=None, model="m", max_tokens=16)
+    except TransportError as caught:
+        assert "rejected" in str(caught)
+    else:
+        raise AssertionError("expected TransportError")
+
+
+# --- Anthropic provider maps malformed responses and transport faults the same way ---------
+class _AnthropicResponse:
+    def __init__(self, parsed: BaseModel | None) -> None:
+        self.parsed_output = parsed
+        self.usage = None
+        self.model = "fake-model"
+
+
+class _AnthropicMessages:
+    def __init__(self, response: _AnthropicResponse | None, exc: Exception | None = None) -> None:
+        self._response = response
+        self._exc = exc
+
+    def parse(self, **_kwargs: Any) -> _AnthropicResponse:
+        if self._exc is not None:
+            raise self._exc
+        assert self._response is not None
+        return self._response
+
+
+class _FakeAnthropicClient:
+    def __init__(self, response: _AnthropicResponse | None, exc: Exception | None = None) -> None:
+        self.messages = _AnthropicMessages(response, exc)
+
+
+def test_anthropic_no_parsed_output_raises_reasoner_error() -> None:
+    prov = AnthropicProvider(client=_FakeAnthropicClient(_AnthropicResponse(parsed=None)))
+    try:
+        prov.parse(prompt="p", schema=_Out, system=None, model="m", max_tokens=16)
+    except ReasonerError as exc:
+        assert "no parsed output" in str(exc)
+    else:
+        raise AssertionError("expected ReasonerError")
+
+
+def test_anthropic_happy_path_returns_data() -> None:
+    prov = AnthropicProvider(client=_FakeAnthropicClient(_AnthropicResponse(parsed=_Out(x=9))))
+    result = prov.parse(prompt="p", schema=_Out, system="sys", model="m", max_tokens=16)
+    assert result.data.x == 9
+    assert result.provider == "anthropic"
+
+
+def test_anthropic_connection_error_maps_to_transport_error() -> None:
+    import anthropic
+    import httpx
+
+    exc = anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com"))
+    prov = AnthropicProvider(client=_FakeAnthropicClient(None, exc=exc))
+    try:
+        prov.parse(prompt="p", schema=_Out, system=None, model="m", max_tokens=16)
+    except TransportError as caught:
+        assert "Anthropic" in str(caught)
+    else:
+        raise AssertionError("expected TransportError")
