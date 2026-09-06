@@ -66,8 +66,8 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
 behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
-live contract (`just test-live`); `0.5.0rc1` qualifies DeepSeek while retaining OpenAI and Anthropic
-as supported, independently testable adapters.
+live contract (`just test-live`). The 0.5 release workflow requires DeepSeek qualification; OpenAI
+and Anthropic remain independently contract-tested unless a release explicitly qualifies them live.
 
 ## No effect bypasses the Verifier — by construction
 
@@ -118,11 +118,13 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
 (the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
+Install the operational candidate explicitly with
+`pip install capability-reasoning-kernel==0.5.0rc2`.
 
 For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
 [operations and migration](docs/OPERATIONS.md) and the [conformance checklist](docs/CONFORMANCE.md).
-It isolates each run, records partial effects and refuses automatic replay. This checkout is a
-**0.5.0rc1 candidate**, not evidence of publication or validated host integration.
+It isolates each run, records partial effects and refuses automatic replay. The 0.5 line is a
+published pre-release; package publication is not evidence of validated host integration.
 
 Explicit low-level wiring remains available. The package root re-exports the building blocks. Sketch (see
 [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):

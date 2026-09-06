@@ -5,7 +5,7 @@ check: lint typecheck test
 
 # Build and validate the distribution, including an install outside the checkout.
 package-check:
-    uv build
+    uv build --clear
     uv run twine check --strict dist/*
     uv run python scripts/check_artifacts.py dist
 

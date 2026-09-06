@@ -8,20 +8,20 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("tag", ["v0.5.0", "0.5.0rc1", "v0.4.2", "v0.5.0rc1-extra"])
+@pytest.mark.parametrize("tag", ["v0.5.0", "0.5.0rc2", "v0.5.0rc1", "v0.5.0rc2-extra"])
 def test_release_rejects_mismatched_tag(tag):
     validate = runpy.run_path(str(Path(__file__).parent.parent / "scripts/check_version.py"))[
         "validate"
     ]
     with pytest.raises(ValueError):
-        validate(tag, "0.5.0rc1")
+        validate(tag, "0.5.0rc2")
 
 
 def test_release_accepts_exact_candidate_tag():
     validate = runpy.run_path(str(Path(__file__).parent.parent / "scripts/check_version.py"))[
         "validate"
     ]
-    validate("v0.5.0rc1", "0.5.0rc1")
+    validate("v0.5.0rc2", "0.5.0rc2")
 
 
 def test_published_check_rejects_unknown_repository(monkeypatch):
@@ -80,6 +80,8 @@ def test_workflows_pin_uv_and_release_requires_deepseek_live():
     assert combined.count(f'checksum: "{checksum}"') == 4
     assert "artifact-roundtrip:" in workflows[0].read_text()
     assert "sha256sum --check SHA256SUMS" in workflows[0].read_text()
+    assert combined.count("uv build --clear") == 2
+    assert "uv build --clear" in (root / "justfile").read_text()
     release = workflows[1].read_text()
     assert "live_providers: deepseek" in release
     assert "DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}" in release
