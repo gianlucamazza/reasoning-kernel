@@ -38,8 +38,10 @@ def _check_choice(choice: Any) -> None:
 
 class OpenAIProvider:
     name = "openai"
+    display_name = "OpenAI"
     supports_prompt_cache = False  # OpenAI does prefix caching server-side; no client marker
     supports_structured_output = True
+    supports_native_schema = True
 
     def __init__(self, client: Any | None = None) -> None:
         self._client = client  # injection seam for tests
@@ -78,26 +80,29 @@ class OpenAIProvider:
         messages.append({"role": "user", "content": prompt})
 
         try:
-            completion = self.client.chat.completions.parse(
-                model=model,
-                messages=messages,
-                response_format=schema,
-                max_completion_tokens=max_tokens,
-            )
-            if not completion.choices:
-                raise ReasonerError("provider returned no choices")
-            choice = completion.choices[0]
-            _check_choice(choice)
-            parsed = choice.message.parsed
-            if parsed is None:
-                raise ReasonerError("provider returned no parsed content")
-        except openai.BadRequestError as exc:
-            if not _is_strict_schema_error(exc):
-                raise TransportError("OpenAI request rejected") from None
-            try:
+            if self.supports_native_schema:
+                try:
+                    completion = self.client.chat.completions.parse(
+                        model=model,
+                        messages=messages,
+                        response_format=schema,
+                        max_completion_tokens=max_tokens,
+                    )
+                    if not completion.choices:
+                        raise ReasonerError("provider returned no choices")
+                    choice = completion.choices[0]
+                    _check_choice(choice)
+                    parsed = choice.message.parsed
+                    if parsed is None:
+                        raise ReasonerError("provider returned no parsed content")
+                except openai.BadRequestError as exc:
+                    if not _is_strict_schema_error(exc):
+                        raise
+                    completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
+            else:
                 completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
-            except openai.APIError:
-                raise TransportError("OpenAI API failure in JSON-mode fallback") from None
+        except openai.BadRequestError:
+            raise TransportError(f"{self.display_name} request rejected") from None
         except openai.LengthFinishReasonError:
             raise ReasonerError("output truncated") from None
         except openai.ContentFilterFinishReasonError:
@@ -105,7 +110,7 @@ class OpenAIProvider:
         except ValidationError:
             raise ReasonerError("invalid structured output") from None
         except openai.APIError:
-            raise TransportError("OpenAI API failure") from None
+            raise TransportError(f"{self.display_name} API failure") from None
 
         u = getattr(completion, "usage", None)
         usage = LLMUsage(
@@ -135,7 +140,6 @@ class OpenAIProvider:
     ) -> tuple[Any, T]:
         schema_json = json.dumps(schema.model_json_schema())
         msgs = [
-            *messages,
             {
                 "role": "system",
                 "content": (
@@ -143,6 +147,7 @@ class OpenAIProvider:
                     f"(no prose, no markdown):\n{schema_json}"
                 ),
             },
+            *messages,
         ]
         completion = self.client.chat.completions.create(
             model=model,

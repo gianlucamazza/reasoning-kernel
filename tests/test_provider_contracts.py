@@ -67,7 +67,6 @@ def invoke(provider):
     return provider.parse(prompt="p", schema=Output, system=None, model="test", max_tokens=32)
 
 
-@pytest.mark.parametrize("provider_cls", [OpenAIProvider, DeepseekProvider])
 @pytest.mark.parametrize(
     "body",
     [
@@ -75,10 +74,16 @@ def invoke(provider):
         {"error": {"param": "response_format.json_schema"}},
     ],
 )
-def test_structured_error_gets_one_validated_fallback(provider_cls, body):
-    provider, api = parse(bad_request(body=body), completion(), provider_cls)
+def test_structured_error_gets_one_validated_fallback(body):
+    provider, api = parse(bad_request(body=body), completion())
     assert invoke(provider).data == Output(x=7)
     assert api.calls == ["parse", "create"]
+
+
+def test_deepseek_uses_validated_json_mode_directly():
+    provider, api = parse(None, completion(), DeepseekProvider)
+    assert invoke(provider).data == Output(x=7)
+    assert api.calls == ["create"]
 
 
 def test_message_substring_does_not_trigger_fallback():

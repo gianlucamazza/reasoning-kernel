@@ -30,7 +30,9 @@ Operational embedding candidate. This entry does not imply a published release o
 - Limits span descendants; `RunLimits()` remains unbounded for explicit low-level wiring.
 - Failed tools stop later steps without implying rollback; output validation cannot undo a call.
 - OpenAI-compatible fallback uses structured error parameters, once; refusals/truncations and
-  malformed outputs are terminal errors. Provider exception messages no longer include raw API text.
+  malformed outputs are terminal errors. DeepSeek routes directly through JSON mode with local
+  schema validation because its compatible API does not implement OpenAI's native JSON Schema mode.
+  Provider exception messages no longer include raw API text.
 - Pyright explicitly resolves the project virtualenv. Documentation distinguishes root planning,
   delegated untrusted planning and partial effects.
 

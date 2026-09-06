@@ -82,7 +82,10 @@ key is absent, so partial configuration is fine.
 Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
 ids are current as of July 2026; the defaults are the cost-effective tier, the variants the
 frontier tier. For Deepseek the legacy `deepseek-chat` / `deepseek-reasoner` names still resolve as
-deprecated aliases of `deepseek-v4-flash` but should not be used.
+deprecated aliases of `deepseek-v4-flash` but should not be used. DeepSeek uses the compatible
+JSON mode and validates the returned object against the requested Pydantic schema locally; OpenAI
+uses native JSON Schema structured output and falls back to the same validated JSON path only when
+the API explicitly rejects `response_format`.
 
 `.env` is gitignored — never commit real keys.
 
