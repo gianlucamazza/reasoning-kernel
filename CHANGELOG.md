@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-09-06
+
+First stable operational embedding release. It promotes the two release candidates after package,
+provider and real-consumer compatibility validation; each host remains responsible for validating
+its own live adapters and policies.
+
+### Changed
+
+- Qualify OpenAI SDK 3.8 through the required live DeepSeek compatibility gate without calling the
+  OpenAI service, and update the locked Pyright version.
+- Upgrade the SHA-pinned uv and Pages actions after CI artifact round-trip and rendered Pages checks.
+- Validate Vibemonitor's real `KernelGate` integration and complete consumer suite on Python 3.14.
+
 ## [0.5.0rc2] - 2026-09-06
 
 Maintenance candidate following the first published operational release. Publication remains
@@ -201,6 +214,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.5.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0
 [0.5.0rc2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc2
 [0.5.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc1
 [0.4.2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.2
