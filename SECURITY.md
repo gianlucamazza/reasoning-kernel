@@ -38,8 +38,9 @@ permissive policy written on top of it.
 
 | Version | Supported |
 |---------|-----------|
-| `0.4.x` | ✅ |
+| `0.6.0rc1` | Current candidate; validate conformance factories and live adapters |
 | `0.5.x` | ✅; validate host adapters before application use |
+| `0.4.x` | ✅ |
 | `0.5.0rc1`, `0.5.0rc2` | Superseded candidates; upgrade to `0.5.0` |
 | `< 0.4` | ❌ |
 

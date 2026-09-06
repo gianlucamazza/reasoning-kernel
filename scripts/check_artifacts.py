@@ -39,7 +39,17 @@ def main() -> None:
             check=True,
             stdout=subprocess.DEVNULL,
         )
-    print("Wheel import, public API and deterministic demo passed in an isolated environment.")
+        subprocess.run(
+            [
+                str(python.parent / "reasoning-kernel-conformance"),
+                "reasoning_kernel.conformance.reference:reference_suite",
+            ],
+            cwd=directory,
+            env=env,
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+    print("Wheel import, demo and conformance CLI passed in an isolated environment.")
 
 
 if __name__ == "__main__":

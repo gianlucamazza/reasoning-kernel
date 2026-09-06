@@ -19,6 +19,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 |--------------------|--------------------------------------------------------------------------|
 | `just check`       | `lint` + `typecheck` + `test` — everything CI runs, in one command        |
 | `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
+| `just conformance` | Complete key-free `operational-v1` reference profile                    |
 | `just demo-subkernel` | §5.4 composition demo: untrusted content delegated at a reduced grant  |
 | `just demo-limits` | Termination demo: `RunLimits` aborts the run closed before the second effect |
 | `just demo-reasoner-error` | Fail-closed demo: a failing reasoner commits nothing (`plan_rejected`) |
@@ -48,10 +49,14 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
 3.12 + 3.13 + 3.14 matrix on push / PR and on release tags via a reusable workflow.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
-manually and when a release calls the reusable workflow with required providers. The 0.5 release
+manually and when a release calls the reusable workflow with required providers. The release
 workflow requires DeepSeek before package build or publication. Release notes live in
 [`CHANGELOG.md`](../CHANGELOG.md);
 security reporting and scope in [`SECURITY.md`](../SECURITY.md).
+
+The conformance CLI is included in wheel smoke testing. It imports a trusted host factory, executes
+the selected fixed profile and returns a non-zero status for failures, inconclusive evidence or invalid suite
+configuration; it never calls a live provider on its own.
 
 The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.
 Operational contracts and migration are in [OPERATIONS.md](OPERATIONS.md); the integration

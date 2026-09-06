@@ -147,3 +147,7 @@ providers must pass on the tagged commit before the package is built. It then bu
 hashes, publishes to TestPyPI, verifies served bytes, promotes those artifacts to PyPI and verifies
 the public bytes again. OIDC publishers/environments must be configured. Provider qualification is
 still distinct from host-adapter acceptance.
+
+Use the executable `operational-v1` profile in [CONFORMANCE.md](CONFORMANCE.md) to standardize host
+tests and CI evidence. A passing report demonstrates the supplied scenarios and observers only; it
+does not replace a controlled live-adapter UAT.
