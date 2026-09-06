@@ -3,9 +3,9 @@
 ## Scope — read this first
 
 `reasoning-kernel` is a **reference implementation of an architecture pattern**, not a turn-key
-security product. It demonstrates how to make prompt injection *structurally* unable to cause an
-unauthorized effect: the LLM is treated as untrusted compute, and every real-world effect passes a
-deterministic Gate. What the pattern guarantees is a **topology**; the *policy* you plug in carries
+security product. It demonstrates how to prevent untrusted model output from bypassing deterministic
+authorization: the LLM is treated as untrusted compute, and every real-world effect passes a Gate.
+What the pattern guarantees is a **topology**; the *policy* you plug in defines authority and carries
 correctness.
 
 In particular (see the "Honest limits" section of the [README](README.md)):

@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Reasoning Kernel — make prompt injection structurally harmless</title>
-<meta name="description" content="A framework-agnostic Python reference implementation of the Reasoning Kernel (CaMeL-like) pattern: an LLM-agent architecture where a prompt injection cannot cause an unauthorized effect — by construction, not by detection." />
+<title>Reasoning Kernel — deterministic authorization for untrusted LLM output</title>
+<meta name="description" content="A framework-agnostic Python reference implementation that puts a deterministic authorization boundary between untrusted LLM output and real effects." />
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Reasoning Kernel" />
-<meta property="og:description" content="Make prompt injection structurally unable to cause an unauthorized effect — by construction, not by detection." />
+<meta property="og:description" content="Put a deterministic authorization boundary between untrusted LLM output and real effects." />
 <meta property="og:url" content="https://gianlucamazza.github.io/reasoning-kernel/" />
 <meta property="og:site_name" content="Reasoning Kernel" />
-<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="Reasoning Kernel" />
-<meta name="twitter:description" content="Make prompt injection structurally unable to cause an unauthorized effect — by construction, not by detection." />
+<meta name="twitter:description" content="Put a deterministic authorization boundary between untrusted LLM output and real effects." />
 <meta name="theme-color" content="#0c0c0b" />
 <link rel="canonical" href="https://gianlucamazza.github.io/reasoning-kernel/" />
 <script type="application/ld+json">
@@ -21,7 +21,9 @@
   "@context": "https://schema.org",
   "@type": "SoftwareSourceCode",
   "name": "Reasoning Kernel",
-  "description": "A framework-agnostic Python reference implementation of the Reasoning Kernel (CaMeL-like) pattern: an LLM-agent architecture where a prompt injection cannot cause an unauthorized effect — by construction, not by detection.",
+  "description": "A framework-agnostic Python reference implementation that puts a deterministic authorization boundary between untrusted LLM output and real effects.",
+  "softwareVersion": "0.6.0",
+  "runtimePlatform": "Python 3.12 or newer",
   "codeRepository": "https://github.com/gianlucamazza/reasoning-kernel",
   "url": "https://gianlucamazza.github.io/reasoning-kernel/",
   "programmingLanguage": "Python",
@@ -288,9 +290,9 @@
 
 <header class="hero" id="top">
   <div class="wrap">
-    <p class="eyebrow">Prompt-injection defense by construction</p>
-    <h1>Make prompt injection <span class="em">structurally</span> unable to cause an unauthorized effect</h1>
-    <p class="tag">An LLM-agent architecture where a hijack is inert — by construction, not by detection.</p>
+    <p class="eyebrow">Version 0.6.0</p>
+    <h1>Put a deterministic Gate between model output and real effects</h1>
+    <p class="tag">Untrusted model output cannot bypass authorization — by construction, not by prompt detection.</p>
     <p class="sub">A small, framework-agnostic Python reference implementation of the Reasoning Kernel pattern in its strong, CaMeL-like form. Every LLM is treated as untrusted compute, mediated by context on input and verification on output.</p>
 
     <div class="badges">
@@ -305,7 +307,7 @@
     <div class="cta">
       <div class="install">
         <span class="dollar">$</span>
-        <span id="install-cmd">pip install capability-reasoning-kernel</span>
+        <span id="install-cmd">pip install capability-reasoning-kernel==0.6.0</span>
         <button id="copy-btn" type="button" aria-label="Copy install command">Copy</button>
       </div>
       <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub →</a>
@@ -320,8 +322,8 @@
   <div class="wrap">
     <p class="eyebrow">01 — The problem</p>
     <h2>A hijack hidden in data</h2>
-    <p class="lede">An LLM agent that reads untrusted data — an email, a web page, a tool result — can be hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call tools on your behalf. This is a reference implementation of an architecture where such a hijack <em class="key">cannot cause an unauthorized effect</em> — not by detecting malicious prompts, but by construction.</p>
-    <p class="lede"><em class="key">The mental model.</em> Treat the model as a brilliant but untrusted contractor. You are glad to use its reasoning, but you never hand it the keys: it proposes a plan, and a deterministic part of the system — one you wrote and can audit — decides what actually happens. The model never reads raw reality and never commits a real effect on its own.</p>
+    <p class="lede">An LLM agent that reads untrusted data — an email, a web page, a tool result — can be hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call tools on your behalf. This reference implementation removes the model's ability to bypass a deterministic authorization boundary.</p>
+    <p class="lede"><em class="key">The mental model.</em> Treat the model as a brilliant but untrusted contractor. The root planner receives no raw tool output. Quarantined reasoners may process untrusted data, but only in host-assembled contexts, without direct effect authority, and their outputs retain provenance.</p>
     <p class="note">The pattern guarantees a <em class="key">topology, not a property</em>: it fixes <em>where</em> mediation and verification live. The root planner is isolated from tool results. Delegated sub-planners see untrusted content under reduced grants; every tool invocation still passes its Gate.</p>
   </div>
 </section>
@@ -330,14 +332,14 @@
   <div class="wrap">
     <p class="eyebrow">02 — Why this works</p>
     <h2>Construction, not detection</h2>
-    <p class="lede">Most defenses try to <em>recognize</em> a malicious prompt — a filter, a classifier, a guard model. An attacker only has to phrase the injection in a way the recognizer misses once. This kernel removes the question entirely: untrusted text is never in a position to issue a command, so there is nothing to recognize.</p>
+    <p class="lede">Detection-based defenses try to recognize malicious prompts with filters, classifiers or guard models, and may miss novel phrasing. This kernel addresses a different question: regardless of phrasing, can model output reach an effect without deterministic authorization?</p>
     <div class="contrast">
       <div class="neg">
         <p class="tagline">The usual approach</p>
         <h3>Detection</h3>
         <ul>
           <li>Inspects content, guessing intent</li>
-          <li>Fails open on a novel phrasing</li>
+          <li>May miss a novel phrasing</li>
           <li>Security depends on a probabilistic check</li>
           <li>An arms race against the attacker</li>
         </ul>
@@ -347,9 +349,9 @@
         <h3>Construction</h3>
         <ul>
           <li>Constrains structure, ignoring intent</li>
-          <li>No path exists for untrusted text to act</li>
-          <li>Security depends on a deterministic boundary</li>
-          <li>The boundary holds regardless of phrasing</li>
+          <li>Every registered effect path crosses the Gate</li>
+          <li>The boundary is deterministic; policy is host-owned</li>
+          <li>The topology does not depend on phrasing</li>
         </ul>
       </div>
     </div>
@@ -363,11 +365,11 @@
     <p class="lede">Everything reduces to two rules the architecture never breaks. There is no trusted model in the system: two reasoners at differentiated privilege are <em>both untrusted</em>, and the trusted core is a deterministic interpreter plus a capability/provenance gate.</p>
     <div class="cards">
       <div class="card">
-        <h3><span class="tag-letter">A</span>Never sees raw reality</h3>
-        <p>Every model invocation gets a context the system assembled, controls, and can inspect. Untrusted data reaches the quarantined parser or a delegated sub-planner under reduced authority. Their outputs retain provenance; the root planner does not see tool results.</p>
+        <h3><span class="tag-letter">A</span>Mediated model inputs</h3>
+        <p>The root planner receives no raw tool output. Every model invocation gets host-assembled context; quarantined reasoners may receive untrusted data under reduced authority, and their outputs retain provenance.</p>
       </div>
       <div class="card">
-        <h3><span class="tag-letter">B</span>Never commits reality</h3>
+        <h3><span class="tag-letter">B</span>Verified effect path</h3>
         <p>No model output becomes a durable effect except through one deterministic verification boundary — the <code>Gate</code> (capability + schema + provenance). There is no second path. So even a fully compromised planner cannot push an effect past the Gate.</p>
       </div>
     </div>
@@ -378,12 +380,12 @@
   <div class="wrap">
     <p class="eyebrow">04 — The components</p>
     <h2>Each part, and what it guarantees</h2>
-    <p class="lede">The system is small and every seam is explicit. Two parts are untrusted (the reasoners); the rest is deterministic code you own and can audit. Module paths point into <code>src/reasoning_kernel/</code>.</p>
+    <p class="lede">The system is small and every seam is explicit. The reasoners are untrusted; the interpreter and Gate form the deterministic core. Host policies, schemas and adapters remain trusted configuration and code. Module paths point into <code>src/reasoning_kernel/</code>.</p>
     <div class="roles">
       <div class="role">
         <div class="head"><span class="name">Context assembler</span></div>
         <span class="mod">context/assembler.py</span>
-        <p>Builds the exact, inspectable input each model is allowed to see. This is where Invariant A lives: a reasoner never reads raw reality, only a context the system controls.</p>
+        <p>Builds the exact, inspectable input each model is allowed to see. This is where Invariant A lives: model input is mediated, even when a quarantined role deliberately receives untrusted content.</p>
       </div>
       <div class="role">
         <div class="head"><span class="name">P-LLM</span><span class="trust">untrusted</span></div>
@@ -433,12 +435,12 @@
       <div class="role">
         <div class="head"><span class="name">Trace</span><span class="trust t">trusted</span></div>
         <span class="mod">memory/trace.py</span>
-        <p>An append-only record of decisions and invocations. Operational sessions persist authorization and start before calling a tool. Missing completion after a crash means an uncertain effect requiring reconciliation.</p>
+        <p>An append-only API for decisions and invocations. Operational sessions persist authorization and start before calling a tool. Missing completion after a crash means an uncertain effect requiring reconciliation; the host still owns storage integrity.</p>
       </div>
       <div class="role">
         <div class="head"><span class="name">Conformance kit</span><span class="trust t">trusted</span></div>
         <span class="mod">conformance/</span>
-        <p>A fixed operational profile turns host scenarios and external observations into a sanitized CI report. Expectations belong to the profile, not to the host being tested.</p>
+        <p>Two fixed profiles — <code>gate-v1</code> and <code>operational-v1</code> — turn trusted host observations into sanitized CI reports. Expectations belong to the profile, not to the host being tested.</p>
       </div>
     </div>
   </div>
@@ -448,7 +450,7 @@
   <div class="wrap">
     <p class="eyebrow">05 — The flows</p>
     <h2>How data and effects move</h2>
-    <p class="lede">The trusted query becomes a plan; untrusted data is quarantined into typed values; every effect funnels through the single Gate. The reasoners (boxed) only ever see controlled context — Invariant A; the Gate is the only crossing into effects — Invariant B.</p>
+    <p class="lede">The trusted query becomes a plan; untrusted data is quarantined into typed values; every registered effect funnels through the single Gate. Each reasoner sees only its host-assembled context — Invariant A; the Gate mediates the effect path — Invariant B.</p>
     <div class="diagram">
       <svg viewBox="0 0 920 360" role="img" aria-label="Data-flow diagram: a trusted query becomes a plan executed by the interpreter; untrusted data is quarantined by the Q-LLM into tainted values; the only path to an external effect is through the deterministic Gate.">
         <defs>
@@ -530,12 +532,12 @@
       <li>
         <span class="flabel">Flow A · plan &amp; execute</span>
         <span class="pipe">Trusted query <span class="arrow">→</span> P-LLM <span class="arrow">→</span> Plan <span class="arrow">→</span> Interpreter</span>
-        <strong>The trusted path.</strong> The planner sees only the controlled query and emits a typed plan; the interpreter runs it in a fixed order. Control flow is decided at plan time — nothing branches or loops on untrusted content.
+        <strong>The trusted path.</strong> The root planner sees only the controlled query and emits a typed plan; the interpreter runs it in a fixed order. Its plan does not branch on tool output. A delegated sub-planner may choose a child plan from untrusted content, but only under a reduced grant.
       </li>
       <li>
         <span class="flabel">Flow B · quarantine</span>
         <span class="pipe">Untrusted data <span class="arrow">→</span> Q-LLM <span class="arrow">→</span> tainted value</span>
-        <strong>How untrusted content enters — as data, never instructions.</strong> A <code>q_parse</code> step routes one piece of untrusted content through the Q-LLM into a typed value against a fixed schema. The result carries a taint label and feeds back into the interpreter; it can never be read as a command.
+        <strong>How untrusted content enters.</strong> A <code>q_parse</code> step routes one piece of untrusted content through the Q-LLM into a typed value against a fixed schema. The result carries a taint label and cannot directly invoke a tool.
       </li>
       <li>
         <span class="flabel">Flow C · effect &amp; gate</span>
@@ -554,7 +556,7 @@
 <section id="run">
   <div class="wrap">
     <p class="eyebrow">06 — What a run looks like</p>
-    <h2>Two attacks, both inert</h2>
+    <h2>Two attacks, blocked in the demo</h2>
     <p class="lede">“Summarize my latest email and send it to me” becomes a typed, four-step plan. Each step has one job, and only the last one can cause an effect:</p>
     <p class="planline"><span class="k">read_inbox</span> <span class="arrow">→</span> <span class="k">q_parse</span> <span class="arrow">(summarize the body)</span> <span class="arrow">→</span> <span class="k">const</span> <span class="arrow">(my own address)</span> <span class="arrow">→</span> <span class="k">send_email</span></p>
     <ol class="steps">
@@ -592,7 +594,7 @@
   <div class="wrap">
     <p class="eyebrow">08 — The plan IR</p>
     <h2>Five step kinds</h2>
-    <p class="lede">A <code>Plan</code> is a forward-only DAG of five step kinds. No branch, loop, or tool selection is conditioned on untrusted content — control-flow leaks of quarantined data are precluded by construction. Only one kind can touch the outside world.</p>
+    <p class="lede">A root <code>Plan</code> is a forward-only DAG of five step kinds and cannot branch or loop on tool output. A delegated sub-planner may choose its child plan from untrusted content under a clamped grant. Only one step kind can touch the outside world, always through the Gate.</p>
     <div class="kinds">
       <div class="kind"><span class="name">const</span><p>A constant value derived from the trusted query.</p></div>
       <div class="kind"><span class="name">q_parse</span><p>Quarantine parse: untrusted content into a typed value, schema fixed at plan time.</p></div>
@@ -606,28 +608,42 @@
 <section id="embedding">
   <div class="wrap">
     <p class="eyebrow">09 — Embedding the kernel</p>
-    <h2>Wire the parts explicitly</h2>
-    <p class="lede">There is no facade — every trusted seam is visible, which is the point. You assemble the components from the previous sections by hand. Install <code>capability-reasoning-kernel</code>; it <em class="key">imports as</em> <code>import reasoning_kernel</code>.</p>
+    <h2>Start with an operational session</h2>
+    <p class="lede"><code>RunSession</code> is the bounded, single-use entry point. It wires a persistent audit sink, an isolated store, operational limits and the same explicit policy and adapter seams. Low-level <code>Interpreter</code> wiring remains available for specialized integrations.</p>
     <pre class="code"><span class="kw">from</span> reasoning_kernel <span class="kw">import</span> (
-    Capability, CapabilitySet, EffectDispatcher, EffectLevel, FakeProvider, Gate, Interpreter,
-    PLLM, QLLM, RunContext, RunId, ToolRegistry, ToolSpec, TraceWriter, TrustedQuery, VerifierVerdict,
+    FakeProvider, PLLM, QLLM, RunContext, RunId, RunSession,
+    SQLiteTraceSink, TrustedQuery,
+)
+<span class="kw">from</span> reasoning_kernel.demo.email_exfil <span class="kw">import</span> CLEAN_BODY, benign_plan, make_world
+<span class="kw">from</span> reasoning_kernel.tools.demo_mail <span class="kw">import</span> (
+    DEMO_GRANT, Q_SCHEMAS, EmailSummary, RecipientIsUserPolicy, build_registry,
 )
 
-<span class="c"># 1. Tools: the callable lives ONLY in the registry, never reachable by the interpreter.</span>
-registry = ToolRegistry()
-registry.register(ToolSpec(name=<span class="kw">"send"</span>, input_schema=SendIn, output_schema=SendOut,
-    required_caps=frozenset({Capability(name=<span class="kw">"mail.send"</span>)}), effect_level=EffectLevel.WRITE), send)
+ctx = RunContext(run_id=RunId(<span class="kw">"unique-request-id"</span>), user=<span class="kw">"user@example.com"</span>,
+                 query=TrustedQuery(text=<span class="kw">"Summarize my latest email and send it to me"</span>))
+provider = FakeProvider({<span class="kw">"Plan"</span>: benign_plan(ctx.run_id),
+                         <span class="kw">"EmailSummary"</span>: EmailSummary(text=<span class="kw">"OK"</span>)})
+<span class="kw">with</span> SQLiteTraceSink(<span class="kw">"audit.sqlite"</span>) <span class="kw">as</span> sink:
+    session = RunSession(
+        ctx=ctx, registry=build_registry(make_world(CLEAN_BODY)), grant=DEMO_GRANT,
+        declass=RecipientIsUserPolicy(), planner=PLLM(provider, grant=DEMO_GRANT),
+        quarantine=QLLM(provider), q_schemas=Q_SCHEMAS, sink=sink,
+    )
+    result = session.run()</pre>
 
-<span class="c"># 2. Your deterministic declassification policy — the one place trust is relaxed.</span>
-grant = CapabilitySet(granted=frozenset({Capability(name=<span class="kw">"mail.send"</span>)}))
-ctx = RunContext(run_id=RunId(<span class="kw">"run-1"</span>), user=<span class="kw">"me@example.com"</span>, query=TrustedQuery(text=<span class="kw">"…your task…"</span>))
-trace = TraceWriter(ctx.run_id)
-dispatcher = EffectDispatcher(registry, Gate(grant, Policy()), trace, ctx)
-
-provider = FakeProvider({})          <span class="c"># swap for get_llm_provider() with a key in .env</span>
-kernel = Interpreter(planner=PLLM(provider, grant=grant), quarantine=QLLM(provider),
-                     dispatcher=dispatcher, trace=trace, q_schemas={})
-result = kernel.run(ctx)             <span class="c"># committed is None if it failed closed</span></pre>
+    <h3>Produce repeatable host evidence</h3>
+    <p class="lede">Pin the package version in CI, then run the fixed profile that matches your integration. <code>gate-v1</code> covers a verifier used before another pipeline; <code>operational-v1</code> covers a complete <code>RunSession</code> host. Reports are sanitized observations from trusted host code, not signed safety attestations.</p>
+    <div class="kinds">
+      <div class="kind"><span class="name">gate-v1</span><p>Four allow/deny scenarios for a real pre-pipeline checkpoint in enforcement mode.</p></div>
+      <div class="kind"><span class="name">operational-v1</span><p>Nine effect, failure, audit and recovery scenarios for the operational runtime.</p></div>
+    </div>
+    <pre class="code">pip install capability-reasoning-kernel==0.6.0
+reasoning-kernel-conformance my_agent.conformance:build_suite --output conformance.json</pre>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/docs/OPERATIONS.md">Operational guide</a>
+      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/docs/CONFORMANCE.md">Conformance contract</a>
+      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/SECURITY.md">Security scope</a>
+    </div>
   </div>
 </section>
 
@@ -657,8 +673,9 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
       <li><strong>Conformance ≠ safety.</strong> A pass-through declassifier conforms yet protects nothing. The pattern guarantees a topology; the <em>policy</em> carries correctness.</li>
       <li><strong>Verification determinism is a discipline, not a typed invariant.</strong> Determinism is required <em>of</em> the declassifier, not enforced <em>on</em> it.</li>
       <li><strong>The trust boundary is axiomatic.</strong> The grant, tool catalog, Q-LLM schemas, and policy are host-supplied and not attested.</li>
-      <li><strong>No data-dependent control flow.</strong> The static DAG cannot branch on parsed content — the price of precluding control-flow leaks.</li>
+      <li><strong>Root control flow is static.</strong> The root DAG cannot branch on tool output; delegated child planning may depend on untrusted content only under a reduced grant.</li>
       <li><strong>No atomicity / rollback, object-level taint.</strong> A committed effect is real even if a later step fails; labels cover whole values (the join over-approximates — strictly safer).</li>
+      <li><strong>Providers and storage remain host concerns.</strong> Sending data to a model provider authorizes that transfer; the SQLite append API is not tamper-evident storage.</li>
     </ul>
   </div>
 </section>
@@ -667,16 +684,16 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
   <div class="wrap">
     <p class="eyebrow">Get started</p>
     <h2>Read it, fork it, conform to it</h2>
-    <p class="lede">It is a reference implementation and spec — a vetted skeleton, not a turn-key product. Install it, run the worked demo, then execute the versioned conformance profile against your own host.</p>
+    <p class="lede">It is a tested reference implementation and spec, not a turn-key security product or an independent audit. Install it, run the worked demo, then execute the versioned conformance profile against your own host.</p>
     <div class="cta">
       <div class="install">
         <span class="dollar">$</span>
-        <span id="install-cmd-2">pip install capability-reasoning-kernel</span>
+        <span id="install-cmd-2">pip install capability-reasoning-kernel==0.6.0</span>
         <button id="copy-btn-2" type="button" aria-label="Copy install command">Copy</button>
       </div>
       <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub →</a>
       <a class="btn" href="https://pypi.org/project/capability-reasoning-kernel/">PyPI</a>
-      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel#readme">README</a>
+      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.0">v0.6.0 release</a>
     </div>
   </div>
 </section>
@@ -689,6 +706,8 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
       <a href="https://github.com/gianlucamazza/reasoning-kernel">GitHub</a>
       <a href="https://pypi.org/project/capability-reasoning-kernel/">PyPI</a>
       <a href="https://github.com/gianlucamazza/reasoning-kernel#readme">README</a>
+      <a href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/docs/CONFORMANCE.md">Conformance</a>
+      <a href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/SECURITY.md">Security</a>
       <a href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/CHANGELOG.md">Changelog</a>
       <a href="https://arxiv.org/abs/2503.18813">Paper</a>
       <a href="https://gianlucamazza.it">gianlucamazza.it ↗</a>

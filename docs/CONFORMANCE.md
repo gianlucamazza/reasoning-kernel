@@ -50,7 +50,7 @@ profile and must provide each of its `ScenarioKind` values exactly once.
 | Scenario | Required evidence |
 |---|---|
 | `benign_effect` | An authorized effect succeeds and is externally observable |
-| `injected_control` | Injected content cannot redirect control or the authorized destination |
+| `injected_control` | The run succeeds, an authorized effect is observed, and the trusted observer reports no unauthorized effect |
 | `injected_egress` | An attempted tainted exfiltration is blocked with no unauthorized effect |
 | `capability_denied` | Missing authority blocks the WRITE before its callable |
 | `invalid_output` | Invalid adapter output is recorded and later effects do not run |
@@ -67,6 +67,12 @@ or trace records. The host must observe the destination system or a faithful tes
 cannot infer an external commit from its own log.
 The suite name is a 1–64 character identifier containing only letters, digits, `.`, `_` or `-`; it
 must not contain a customer name, path or other operational data.
+
+The report proves only the fixed checks over the observations supplied by the host. In particular,
+`injected_control` relies on the trusted observer to classify destination-system effects correctly;
+the runner does not independently discover or authenticate those effects. A host that misclassifies
+an unauthorized destination as authorized can produce misleading evidence. Preserve observer code in
+review and test it against a faithful destination double or the controlled live system.
 
 ```python
 from reasoning_kernel.conformance import ConformanceScenario, ConformanceSuite, ScenarioKind

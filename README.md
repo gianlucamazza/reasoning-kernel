@@ -11,8 +11,8 @@
 
 **The problem.** An LLM agent that reads untrusted data — an email, a web page, a tool result — can be
 hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call
-tools on your behalf. This is a reference implementation of an architecture where such a hijack
-**cannot cause an unauthorized effect** — not by detecting malicious prompts, but by construction.
+tools on your behalf. This is a reference implementation of an architecture where untrusted model
+output **cannot bypass deterministic authorization** — by construction, not by prompt detection.
 
 A small, framework-agnostic Python reference implementation of the **Reasoning Kernel** pattern in its
 strong, CaMeL-like form ([Debenedetti et al., 2025](https://arxiv.org/abs/2503.18813)): every LLM is
@@ -22,19 +22,20 @@ treated as **untrusted compute**, mediated by context on input and verification 
 > computational resource, mediated by context on input and verification on output.
 
 **Who this is for.** If you're building an LLM agent that takes actions on untrusted input, this is a
-vetted skeleton and spec: read it to understand the pattern, fork it, or conform your own system to it.
-It is a reference implementation, **not** a turn-key security product.
+tested reference implementation and spec: read it to understand the pattern, fork it, or conform your
+own system to it. It is **not** a turn-key security product or an independent security audit.
 
 ## The two invariants
 
-- **A — the reasoner never sees raw reality.** Every model invocation gets a context the system
-  assembled, controls, and can inspect (`context/`).
+- **A — model inputs are mediated.** The root planner receives no raw tool output. Every model
+  invocation gets host-assembled context; quarantined reasoners may receive untrusted data under
+  reduced authority, and their outputs retain provenance (`context/`).
 - **B — the reasoner never commits reality.** No model output becomes a durable effect except
   through one deterministic verification boundary (`kernel/gate.py`).
 
 The pattern guarantees a **topology, not a property**: it fixes *where* mediation and verification
 live, by construction; it does not guarantee any particular policy is safe. Conformance is a
-*necessary*, not a *sufficient*, condition. Concretely: no matter what an injected message says, it can
+*necessary*, not a *sufficient*, condition. Concretely: no matter what an injected message says, it
 cannot fire a tool without passing your Gate. The root planner is isolated from tool results;
 delegated sub-planners deliberately see untrusted data under reduced grants. Whether your Gate's
 *policy* is correct is on you.
@@ -63,7 +64,7 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 | Tool catalog   | `tools/registry.py`             | sole holder of tool callables   |
 | Memory / Trace | `memory/`                       | durability / audit format       |
 
-Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
+Reasoner providers: Anthropic, OpenAI, DeepSeek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
 behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
 live contract (`just test-live`). The release workflow requires DeepSeek qualification; OpenAI
@@ -99,6 +100,7 @@ Run it with `just demo` (the trace shows each gate decision and why).
 uv sync --extra dev            # key-free: demo + the full default test suite
 just demo        # FakeProvider: legit send commits; injection inert; exfiltration BLOCKED
 just test        # key-free suite (with coverage) incl. the conformance + blocking proofs
+just docs-check  # local links, anchors, release metadata and claim-drift guard
 just lint && just typecheck
 just demo-subkernel  # §5.4: delegate untrusted content to an inner kernel at a reduced grant
 just demo-limits        # termination: RunLimits aborts the run closed before the second effect

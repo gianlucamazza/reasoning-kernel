@@ -39,7 +39,7 @@ Documentation = "https://github.com/gianlucamazza/reasoning-kernel/blob/main/doc
 Changelog = "https://github.com/gianlucamazza/reasoning-kernel/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-# Deepseek needs no separate dep: it is OpenAI-compatible and reuses the `openai` SDK via base_url.
+# DeepSeek needs no separate dep: it is OpenAI-compatible and reuses the `openai` SDK via base_url.
 providers = ["anthropic>=0.40,<2", "openai>=1.50,<4"]
 # SDKs are required by mocked provider contract tests, without any API keys.
 dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.9", "pyright>=1.1.380", "twine>=6.0", "httpx2>=2.12,<3", "anthropic>=0.40,<2", "openai>=1.50,<4"]

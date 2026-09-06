@@ -20,6 +20,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 | `just check`       | `lint` + `typecheck` + `test` — everything CI runs, in one command        |
 | `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
 | `just conformance` | Complete key-free `operational-v1` reference profile                    |
+| `just docs-check`  | Local links, anchors, release metadata and claim-drift guard             |
 | `just demo-subkernel` | §5.4 composition demo: untrusted content delegated at a reduced grant  |
 | `just demo-limits` | Termination demo: `RunLimits` aborts the run closed before the second effect |
 | `just demo-reasoner-error` | Fail-closed demo: a failing reasoner commits nothing (`plan_rejected`) |
@@ -29,7 +30,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 | `just fix`         | `ruff check --fix` + `ruff format`                                        |
 | `just typecheck`   | `pyright`                                                                 |
 | `just demo-live`   | End-to-end with a **real** planner/parser (needs a key in `.env`)        |
-| `just test-live`   | Real Anthropic/OpenAI/Deepseek round-trips (needs API keys)              |
+| `just test-live`   | Real Anthropic/OpenAI/DeepSeek round-trips (needs API keys)              |
 
 ## Quality bar
 
@@ -46,8 +47,8 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 - **pre-commit**: hooks run ruff (+ format), the standard hygiene checks, and `pyright` strict on
   `schemas` + `kernel` + `memory`. Install once with `uv run pre-commit install`.
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
-3.12 + 3.13 + 3.14 matrix on push / PR and on release tags via a reusable workflow.
+CI (`.github/workflows/ci.yml`) runs the offline documentation contract once, then lint, typecheck,
+and the covered test suite on a Python 3.12 + 3.13 + 3.14 matrix on push / PR and on release tags.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
 manually and when a release calls the reusable workflow with required providers. The release
 workflow requires DeepSeek before package build or publication. Release notes live in
@@ -79,7 +80,7 @@ Keys are accepted under either their conventional bare name or an `RK_`-prefixed
 |-----------|------------------------------------------|---------------------------------------------|
 | Anthropic | `ANTHROPIC_API_KEY` / `RK_ANTHROPIC_API_KEY` | `claude-sonnet-5` (`claude-opus-4-8`) |
 | OpenAI    | `OPENAI_API_KEY` / `RK_OPENAI_API_KEY`       | `gpt-5.5` (`gpt-5.5-pro`)               |
-| Deepseek  | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY`   | `deepseek-v4-flash` (`deepseek-v4-pro`) |
+| DeepSeek  | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY`   | `deepseek-v4-flash` (`deepseek-v4-pro`) |
 
 Other overrides (defaults in `config.py`): `RK_LLM_PROVIDER_DEFAULT`, `RK_LLM_MODEL_*`,
 `RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`, `RK_LLM_MAX_TOKENS`. With no selector, live tests
@@ -92,7 +93,7 @@ RK_LIVE_PROVIDERS=deepseek just test-live
 
 Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
 ids are current as of July 2026; the defaults are the cost-effective tier, the variants the
-frontier tier. For Deepseek the legacy `deepseek-chat` / `deepseek-reasoner` names still resolve as
+frontier tier. For DeepSeek the legacy `deepseek-chat` / `deepseek-reasoner` names still resolve as
 deprecated aliases of `deepseek-v4-flash` but should not be used. DeepSeek uses the compatible
 JSON mode and validates the returned object against the requested Pydantic schema locally; OpenAI
 uses native JSON Schema structured output and falls back to the same validated JSON path only when
