@@ -235,6 +235,34 @@ def test_sqlite_reopen_preserves_uncertain_invocation_and_refuses_replay(tmp_pat
             session(registry_for(lambda _: Output()), ctx=context("crashed"), sink=sink)
 
 
+def test_sqlite_discovers_runs_requiring_operator_review(tmp_path):
+    path = tmp_path / "audit.sqlite"
+    with SQLiteTraceSink(path) as sink:
+        for run_id in ("empty", "complete", "uncertain"):
+            sink.start(RunId(run_id))
+
+        complete = RunId("complete")
+        sink.append(
+            complete,
+            AuditEvent(kind="effect_started", run_id=complete, seq=0, invocation_id="confirmed"),
+        )
+        sink.append(
+            complete,
+            AuditEvent(kind="effect_committed", run_id=complete, seq=1, invocation_id="confirmed"),
+        )
+        sink.append(complete, AuditEvent(kind="run_committed", run_id=complete, seq=2))
+
+        uncertain = RunId("uncertain")
+        sink.append(
+            uncertain,
+            AuditEvent(kind="effect_started", run_id=uncertain, seq=0, invocation_id="unconfirmed"),
+        )
+        sink.append(uncertain, AuditEvent(kind="run_errored", run_id=uncertain, seq=1))
+
+        assert sink.list_run_ids() == [RunId("empty"), complete, uncertain]
+        assert sink.runs_requiring_review() == [RunId("empty"), uncertain]
+
+
 @pytest.mark.parametrize(
     "kind,expected_calls,expected_effects",
     [
@@ -589,6 +617,10 @@ def test_sqlite_unavailable_is_a_sanitized_storage_error(tmp_path):
     sink.close()
     with pytest.raises(TraceStorageError, match="cannot read audit events"):
         sink.read(RunId("r"))
+    with pytest.raises(TraceStorageError, match="cannot list audit runs"):
+        sink.list_run_ids()
+    with pytest.raises(TraceStorageError, match="cannot inspect audit runs"):
+        sink.runs_requiring_review()
 
 
 def test_sqlite_marks_unversioned_candidate_layout_as_version_one(tmp_path):
@@ -666,6 +698,8 @@ def test_sqlite_rejects_invalid_event_payload(tmp_path):
         sink._db.commit()
         with pytest.raises(TraceStorageError, match="invalid audit event"):
             sink.read(RunId("r"))
+        with pytest.raises(TraceStorageError, match="invalid audit event"):
+            sink.runs_requiring_review()
 
 
 def test_invalid_prebuilt_plan_is_revalidated_before_any_effect():
