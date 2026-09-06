@@ -13,6 +13,10 @@ In particular (see the "Honest limits" section of the [README](README.md)):
 - A pass-through declassifier conforms to the pattern yet protects nothing — **the declassifier is the
   residual risk surface**. Every `may_declassify=True` is a deliberate, traced trust decision.
 - There is no atomicity / rollback: an effect already committed is real even if a later step fails.
+- Operational sessions require explicit egress declarations and record uncertain effects; audit
+  storage failures halt work but cannot undo an external call. See [operations](docs/OPERATIONS.md).
+- Providers are data recipients authorized by the host. Quarantine does not enforce confidentiality
+  against the selected provider. SQLite audit is not tamper-proof or a substitute for host access control.
 
 So a "vulnerability" here means a way to make the **kernel itself** commit an effect that its Gate and
 labels should have blocked — i.e. a hole in the mechanism (`kernel/`, `schemas/`, `memory/`), not a
@@ -35,6 +39,7 @@ permissive policy written on top of it.
 | Version | Supported |
 |---------|-----------|
 | `0.4.x` | ✅ |
+| `0.5.0rc1` | Candidate; report issues, validate adapters before application use |
 | `< 0.4` | ❌ |
 
 ## Reporting a vulnerability
@@ -47,4 +52,4 @@ Please report privately — do **not** open a public issue for a suspected vulne
 Include a minimal reproduction (a plan + tool/policy setup that commits an effect that should have been
 blocked), the expected vs. actual behavior, and the affected version/commit. Expect an initial
 acknowledgement within a few days. As a single-maintainer reference project there is no formal SLA, but
-mechanism-level issues are taken seriously and will be addressed in a `0.4.x` patch.
+mechanism-level issues are taken seriously and addressed in the applicable supported release line.

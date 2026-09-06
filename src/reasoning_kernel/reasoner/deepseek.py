@@ -13,6 +13,10 @@ from reasoning_kernel.reasoner.openai import OpenAIProvider
 
 class DeepseekProvider(OpenAIProvider):
     name = "deepseek"
+    display_name = "DeepSeek"
+    # DeepSeek exposes JSON mode through the OpenAI-compatible API, but not OpenAI's
+    # native JSON Schema response format. Validate JSON-mode responses locally instead.
+    supports_native_schema = False
 
     def _build_client(self) -> Any:
         import openai

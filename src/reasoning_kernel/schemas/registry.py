@@ -27,6 +27,7 @@ class ToolSpec(BaseModel):
     output_schema: type[BaseModel]
     required_caps: frozenset[Capability]
     effect_level: EffectLevel
+    args_leave_boundary: bool | None = None  # required explicitly by RunSession
     result_readers: frozenset[Capability] = frozenset()
     result_subjects: frozenset[DataSubject] = frozenset()  # whose data this tool's output is about
 
@@ -34,7 +35,9 @@ class ToolSpec(BaseModel):
     def _write_must_declare_capability(self) -> ToolSpec:
         # A world-mutating effect must be gated by at least one capability; otherwise the
         # provenance check would have no capability to reason about (see kernel/gate.py).
-        if self.effect_level >= EffectLevel.WRITE and not self.required_caps:
+        if (
+            self.effect_level >= EffectLevel.WRITE or self.args_leave_boundary
+        ) and not self.required_caps:
             raise ValueError(
                 f"WRITE tool {self.name!r} must declare at least one required capability"
             )

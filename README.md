@@ -35,8 +35,9 @@ It is a reference implementation, **not** a turn-key security product.
 The pattern guarantees a **topology, not a property**: it fixes *where* mediation and verification
 live, by construction; it does not guarantee any particular policy is safe. Conformance is a
 *necessary*, not a *sufficient*, condition. Concretely: no matter what an injected message says, it can
-never reach the planner nor fire a tool without passing your Gate — that boundary holds by
-construction; whether your Gate's *policy* is correct is on you.
+cannot fire a tool without passing your Gate. The root planner is isolated from tool results;
+delegated sub-planners deliberately see untrusted data under reduced grants. Whether your Gate's
+*policy* is correct is on you.
 
 ## Strong form: no trusted reasoner
 
@@ -64,19 +65,19 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
-behind one interface (`reasoner/base.py`). The fungibility corollary is validated live: OpenAI and
-Deepseek return schema-valid `Plan`s through the same interface (`just test-live`); Anthropic is
-exercised on demand when its key is set.
+behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
+live contract (`just test-live`); `0.5.0rc1` qualifies DeepSeek while retaining OpenAI and Anthropic
+as supported, independently testable adapters.
 
 ## No effect bypasses the Verifier — by construction
 
 1. Tool callables live only in `ToolRegistry`, handed only to `EffectDispatcher`; the interpreter
    never holds one.
-2. `EffectDispatcher` cannot be constructed without a `Gate`, and `dispatch` checks it
+2. `EffectDispatcher` cannot be constructed without a `Gate`, and `dispatch` authorizes the call
    unconditionally before the callable runs.
 3. `ToolCallStep` is the only step kind that invokes a tool callable, and its only handler routes
    through the dispatcher. The other step kinds (`const`, `q_parse`, `subkernel`, `merge`) produce
-   values, never external effects.
+   values; a sub-kernel may invoke tools through its reduced Gate and the same dispatcher path.
 
 ## What a run looks like
 
@@ -104,9 +105,9 @@ just demo-limits        # termination: RunLimits aborts the run closed before th
 just demo-reasoner-error # fail-closed: a failing reasoner commits nothing (plan_rejected)
 just demo-merge      # MergeStep: combine several reads into one value; taint flows through the join
 
-uv sync --all-extras           # adds the provider SDKs for the live flows below
+uv sync --all-extras           # explicit provider extra (dev also includes SDKs for mock tests)
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
-just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
+just test-live   # configured real-provider round-trips; RK_LIVE_PROVIDERS makes a set mandatory
 ```
 
 See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the quality bar (coverage gate, strict typing,
@@ -118,8 +119,12 @@ pre-commit) and how to configure provider keys. Release notes are in
 Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
 (the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
 
-There is no facade: you wire the parts explicitly, which is the point — every trusted seam is visible.
-The package root re-exports the building blocks. Sketch (see
+For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
+[operations and migration](docs/OPERATIONS.md) and the [conformance checklist](docs/CONFORMANCE.md).
+It isolates each run, records partial effects and refuses automatic replay. This checkout is a
+**0.5.0rc1 candidate**, not evidence of publication or validated host integration.
+
+Explicit low-level wiring remains available. The package root re-exports the building blocks. Sketch (see
 [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):
 
 ```python
@@ -173,9 +178,8 @@ result = kernel.run(ctx)             # RunResult(trace, committed); committed is
 - **Reasoner failure is fail-closed**: a provider that returns no usable output (empty / refused /
   malformed) raises `ReasonerError` (`reasoner/base.py`), and a provider call that fails in transport
   (rate limit exhausted, 5xx, network fault) raises its `TransportError` subclass; either way the
-  Conductor records a terminal trace event and commits nothing, rather than crashing or acting on a
-  partial result. Treating the model as untrusted compute
-  means a flaky reasoner can never produce a half-applied effect.
+  Conductor records a terminal trace event and stops subsequent work. Earlier effects remain real
+  and are reported in `RunResult.effects`; `committed=None` means no final value, not rollback.
 - **Capability composition (§5.4)**: every reasoner is bound to a `CapabilitySet`; the kernel rejects a
   reasoner whose grant exceeds the dispatcher's — a child can never widen authority. A `SubKernelStep`
   delegates untrusted content to an inner kernel at a **clamped, reduced grant**: an injection in that
@@ -184,9 +188,9 @@ result = kernel.run(ctx)             # RunResult(trace, committed); committed is
 - **Static, data-independent control flow**: a `Plan` is a forward-only DAG of five step kinds
   (`const`, `tool`, `q_parse`, `subkernel`, `merge`), executed linearly by `kernel/interpreter.py`; a
   `QuarantineParseStep`'s target schema is fixed at plan time
-  (`schema_ref`), never chosen on the quarantined value. No branch, loop, or tool selection is
-  conditioned on untrusted content — so control-flow leaks of quarantined data are precluded by
-  construction, not by policy (the matching cost is in *Honest limits*).
+  (`schema_ref`), never chosen on the quarantined value. There are no runtime branches or loops.
+  Delegated sub-planners can choose a child plan based on untrusted input; its authority and literal
+  provenance are reduced accordingly. This is not a claim of data-independent planning across delegation.
 
 ## Honest limits (fundamental — localized, not dissolved)
 
@@ -224,7 +228,7 @@ result = kernel.run(ctx)             # RunResult(trace, committed); committed is
 - **Join** — combining values combines their labels conservatively (union of sources, intersection of
   readers, union of subjects), so taint only ever increases.
 - **Quarantine** — routing untrusted content through the Q-LLM, which cannot launder its taint.
-- **Capability / grant** — an unforgeable permission a tool requires; a run holds a fixed
+- **Capability / grant** — a host-issued permission a tool requires; a run holds a fixed
   `CapabilitySet` (its *grant*), and a sub-kernel's grant can only ever shrink.
 - **Declassifier (`DeclassPolicy`)** — the single deterministic seam that may let tainted data into a
   WRITE; the one place trust is deliberately relaxed.

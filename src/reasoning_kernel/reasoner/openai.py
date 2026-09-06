@@ -11,19 +11,42 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
+from reasoning_kernel.reasoner.base import (
+    LLMResult,
+    LLMUsage,
+    ReasonerError,
+    provider_transport_error,
+)
 
 
 def _is_strict_schema_error(exc: Exception) -> bool:
-    return "response_format" in str(exc).lower()
+    param = getattr(exc, "param", None)
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        error = body.get("error", body)
+        if isinstance(error, dict):
+            param = param or error.get("param")
+    return isinstance(param, str) and (
+        param == "response_format" or param.startswith("response_format.")
+    )
+
+
+def _check_choice(choice: Any) -> None:
+    reason = getattr(choice, "finish_reason", None)
+    if reason == "length":
+        raise ReasonerError("output truncated")
+    if reason == "content_filter" or getattr(choice.message, "refusal", None):
+        raise ReasonerError("provider refused structured response")
 
 
 class OpenAIProvider:
     name = "openai"
+    display_name = "OpenAI"
     supports_prompt_cache = False  # OpenAI does prefix caching server-side; no client marker
     supports_structured_output = True
+    supports_native_schema = True
 
     def __init__(self, client: Any | None = None) -> None:
         self._client = client  # injection seam for tests
@@ -62,38 +85,48 @@ class OpenAIProvider:
         messages.append({"role": "user", "content": prompt})
 
         try:
-            completion = self.client.chat.completions.parse(
-                model=model,
-                messages=messages,
-                response_format=schema,
-                max_completion_tokens=max_tokens,
-            )
-            if not completion.choices:
-                raise ReasonerError("provider returned no choices")
-            choice = completion.choices[0]
-            if choice.message.refusal:
-                raise ReasonerError(
-                    f"provider refused structured response: {choice.message.refusal}"
-                )
-            parsed = choice.message.parsed
-            if parsed is None:
-                raise ReasonerError("provider returned no parsed content")
-        except openai.BadRequestError as exc:
-            if not _is_strict_schema_error(exc):
-                raise TransportError(f"OpenAI request rejected: {exc}") from exc
-            try:
+            if self.supports_native_schema:
+                try:
+                    completion = self.client.chat.completions.parse(
+                        model=model,
+                        messages=messages,
+                        response_format=schema,
+                        max_completion_tokens=max_tokens,
+                    )
+                    if not completion.choices:
+                        raise ReasonerError("provider returned no choices")
+                    choice = completion.choices[0]
+                    _check_choice(choice)
+                    parsed = choice.message.parsed
+                    if parsed is None:
+                        raise ReasonerError("provider returned no parsed content")
+                except openai.BadRequestError as exc:
+                    if not _is_strict_schema_error(exc):
+                        raise
+                    completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
+            else:
                 completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
-            except openai.APIError as fallback_exc:
-                raise TransportError(
-                    f"OpenAI API failure in JSON-mode fallback: {fallback_exc}"
-                ) from fallback_exc
+        except openai.BadRequestError as exc:
+            raise provider_transport_error(self.display_name, exc, "request rejected") from None
+        except openai.LengthFinishReasonError:
+            raise ReasonerError("output truncated") from None
+        except openai.ContentFilterFinishReasonError:
+            raise ReasonerError("provider refused structured response") from None
+        except ValidationError:
+            raise ReasonerError("invalid structured output") from None
         except openai.APIError as exc:
-            raise TransportError(f"OpenAI API failure: {exc}") from exc
+            raise provider_transport_error(self.display_name, exc, "API failure") from None
 
         u = getattr(completion, "usage", None)
         usage = LLMUsage(
             input_tokens=getattr(u, "prompt_tokens", 0) if u else 0,
             output_tokens=getattr(u, "completion_tokens", 0) if u else 0,
+            cache_read_tokens=getattr(getattr(u, "prompt_tokens_details", None), "cached_tokens", 0)
+            or 0,
+            reasoning_tokens=getattr(
+                getattr(u, "completion_tokens_details", None), "reasoning_tokens", 0
+            )
+            or 0,
         )
         return LLMResult(
             data=parsed,
@@ -112,7 +145,6 @@ class OpenAIProvider:
     ) -> tuple[Any, T]:
         schema_json = json.dumps(schema.model_json_schema())
         msgs = [
-            *messages,
             {
                 "role": "system",
                 "content": (
@@ -120,6 +152,7 @@ class OpenAIProvider:
                     f"(no prose, no markdown):\n{schema_json}"
                 ),
             },
+            *messages,
         ]
         completion = self.client.chat.completions.create(
             model=model,
@@ -129,5 +162,11 @@ class OpenAIProvider:
         )
         if not completion.choices:
             raise ReasonerError("provider returned no choices")
+        _check_choice(completion.choices[0])
         content = completion.choices[0].message.content or ""
-        return completion, schema.model_validate_json(content)
+        if not content.strip():
+            raise ReasonerError("provider returned empty content")
+        try:
+            return completion, schema.model_validate_json(content)
+        except ValidationError:
+            raise ReasonerError("invalid JSON-mode output") from None

@@ -1,5 +1,8 @@
 # Analisi del progetto e piano di miglioramento — luglio 2026
 
+> Historical snapshot. The 0.5 operational candidate is described in
+> [OPERATIONS.md](OPERATIONS.md) and [CONFORMANCE.md](CONFORMANCE.md); see CHANGELOG for changes.
+
 Analisi completa della codebase alla versione **0.4.1** (branch `main`, commit `0189752`),
 condotta su tre assi: core fidato (kernel/memory/context), livello di integrazione LLM
 (reasoner/config/tools), e qualità/DevEx (test, CI, packaging, documentazione).

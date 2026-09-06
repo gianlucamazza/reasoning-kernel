@@ -3,15 +3,21 @@ set dotenv-load := true
 # everything CI runs, locally, in one command
 check: lint typecheck test
 
+# Build and validate the distribution, including an install outside the checkout.
+package-check:
+    uv build
+    uv run twine check --strict dist/*
+    uv run python scripts/check_artifacts.py dist
+
 # lint (ruff check + format check)
 lint:
-    uv run ruff check src/ tests/
-    uv run ruff format --check src/ tests/
+    uv run ruff check src/ tests/ scripts/
+    uv run ruff format --check src/ tests/ scripts/
 
 # auto-fix lint issues
 fix:
-    uv run ruff check --fix src/ tests/
-    uv run ruff format src/ tests/
+    uv run ruff check --fix src/ tests/ scripts/
+    uv run ruff format src/ tests/ scripts/
 
 # type check (strict on schemas/ + kernel/, basic elsewhere — see pyproject)
 typecheck:

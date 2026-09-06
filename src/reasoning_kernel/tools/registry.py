@@ -42,3 +42,9 @@ class ToolRegistry:
     def catalog(self) -> list[ToolSpec]:
         """Specs only — names, schemas, effect levels. Safe to show the planner."""
         return [t.spec for t in self._tools.values()]
+
+    def snapshot(self) -> ToolRegistry:
+        """Detach a session's catalog from subsequent host registrations."""
+        registry = ToolRegistry()
+        registry._tools = self._tools.copy()
+        return registry

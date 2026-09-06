@@ -17,8 +17,7 @@ class ReasonerError(Exception):
     """A provider failed to return a usable structured result.
 
     Covers empty/refused/malformed provider responses. The Conductor treats it as a fail-closed
-    condition — the run commits nothing — rather than a crash, so a flaky reasoner can never
-    produce a partial effect.
+    condition: subsequent work stops. Previously completed or uncertain tool effects remain real.
     """
 
 
@@ -30,6 +29,58 @@ class TransportError(ReasonerError):
     and the trace records a terminal event, instead of the run vanishing behind a raw traceback
     with no audit record.
     """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        category: str = "api_error",
+        status_code: int | None = None,
+        code: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.category = category
+        self.status_code = status_code
+        self.code = code
+
+
+_ERROR_CATEGORIES = {
+    "AuthenticationError": "authentication",
+    "PermissionDeniedError": "permission",
+    "RateLimitError": "rate_limit",
+    "APITimeoutError": "timeout",
+    "APIConnectionError": "connection",
+    "InternalServerError": "server",
+    "BadRequestError": "request",
+}
+
+_SAFE_PROVIDER_CODES = {
+    "billing_not_active",
+    "credit_balance_exhausted",
+    "insufficient_quota",
+    "invalid_api_key",
+    "rate_limit_exceeded",
+}
+
+
+def provider_transport_error(provider: str, exc: Exception, action: str) -> TransportError:
+    """Build an actionable error without retaining provider messages or response bodies."""
+    category = _ERROR_CATEGORIES.get(type(exc).__name__, "api_error")
+    status = getattr(exc, "status_code", None)
+    status_code = status if isinstance(status, int) else None
+    raw_code = getattr(exc, "code", None)
+    code = raw_code if isinstance(raw_code, str) and raw_code in _SAFE_PROVIDER_CODES else None
+    details = [category]
+    if status_code is not None:
+        details.append(f"status={status_code}")
+    if code is not None:
+        details.append(f"code={code}")
+    return TransportError(
+        f"{provider} {action} ({', '.join(details)})",
+        category=category,
+        status_code=status_code,
+        code=code,
+    )
 
 
 @dataclass(frozen=True, slots=True)

@@ -4,7 +4,30 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch: # manual trigger for the optional live-provider job
+  workflow_dispatch:
+    inputs:
+      live_providers:
+        description: Comma-separated providers required by the live gate
+        required: true
+        default: deepseek
+        type: string
+  workflow_call:
+    inputs:
+      live_providers:
+        description: Comma-separated providers required by the live gate
+        required: false
+        default: ""
+        type: string
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      OPENAI_API_KEY:
+        required: false
+      DEEPSEEK_API_KEY:
+        required: false
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,21 +39,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.12.10"
+          checksum: "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
       - name: Install just
-        uses: extractions/setup-just@v4
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Sync dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --locked
 
       # The justfile uses `set dotenv-load`; provide a no-secret env so it loads cleanly.
       # The default suite is key-free and `live` tests are excluded via addopts -m 'not live'.
@@ -46,27 +73,35 @@ jobs:
       - name: Test
         run: just test # runs with coverage; fails under the threshold in pyproject
 
-  # Optional: real Anthropic/OpenAI/Deepseek round-trips. Manual only (needs API keys in secrets).
+      - name: Verify distribution
+        run: just package-check
+
+  # Explicit provider qualification: manual or required by the release's reusable workflow call.
   live:
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.live_providers != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.12.10"
+          checksum: "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
           python-version: "3.12"
           enable-cache: true
 
       - name: Install just
-        uses: extractions/setup-just@v4
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Sync dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --locked
 
       - name: Run live provider tests
         env:
+          RK_LIVE_PROVIDERS: ${{ inputs.live_providers }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
