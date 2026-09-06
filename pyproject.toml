@@ -29,7 +29,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 requires-python = ">=3.12"
-dependencies = ["pydantic>=2.7", "pydantic-settings>=2.0"]
+dependencies = ["pydantic>=2.7", "pydantic-settings>=2.14.2"]
 
 [project.urls]
 Homepage = "https://github.com/gianlucamazza/reasoning-kernel"

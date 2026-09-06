@@ -23,6 +23,7 @@ Operational embedding candidate. This entry does not imply a published release o
 
 ### Changed
 
+- Require a patched `pydantic-settings>=2.14.2` (GHSA-4xgf-cpjx-pc3j) and refresh its lock entry.
 - Low-level interpreters reject reuse and context/trace mismatches; child IDs are opaque.
 - Limits span descendants; `RunLimits()` remains unbounded for explicit low-level wiring.
 - Failed tools stop later steps without implying rollback; output validation cannot undo a call.
