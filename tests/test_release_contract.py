@@ -30,6 +30,34 @@ def test_published_check_rejects_unknown_repository(monkeypatch):
         main()
 
 
+def test_published_check_selects_only_wheel_and_sdist(tmp_path):
+    expected_artifacts = runpy.run_path(
+        str(Path(__file__).parent.parent / "scripts/check_published.py")
+    )["expected_artifacts"]
+    (tmp_path / "package-0.5.0-py3-none-any.whl").write_bytes(b"wheel")
+    (tmp_path / "package-0.5.0.tar.gz").write_bytes(b"sdist")
+    (tmp_path / ".gitignore").write_text("*\n")
+
+    assert set(expected_artifacts(tmp_path)) == {
+        "package-0.5.0-py3-none-any.whl",
+        "package-0.5.0.tar.gz",
+    }
+
+
+@pytest.mark.parametrize("suffix", [".whl", ".tar.gz"])
+def test_published_check_rejects_duplicate_distribution_type(tmp_path, suffix):
+    expected_artifacts = runpy.run_path(
+        str(Path(__file__).parent.parent / "scripts/check_published.py")
+    )["expected_artifacts"]
+    (tmp_path / f"package-a{suffix}").write_bytes(b"a")
+    (tmp_path / f"package-b{suffix}").write_bytes(b"b")
+    other_suffix = ".tar.gz" if suffix == ".whl" else ".whl"
+    (tmp_path / f"package{other_suffix}").write_bytes(b"other")
+
+    with pytest.raises(ValueError, match="one wheel and one sdist"):
+        expected_artifacts(tmp_path)
+
+
 def test_workflows_pin_uv_and_release_requires_deepseek_live():
     root = Path(__file__).parent.parent
     workflows = [root / ".github/workflows/ci.yml", root / ".github/workflows/release.yml"]
