@@ -596,3 +596,22 @@ def test_invalid_prebuilt_plan_is_revalidated_before_any_effect():
     plan.final = StepId("missing")
     result = session(registry_for(lambda _: calls.append(True) or Output()), plan=plan).run()
     assert result.status == "errored" and not calls
+
+
+def test_type_changing_normalization_is_not_mistaken_for_unchanged_data():
+    class Changed(BaseModel):
+        public: list[object]
+
+        @model_validator(mode="before")
+        @classmethod
+        def normalize(cls, data):
+            if data.get("hidden"):
+                data["public"] = [True]  # Python equality alone considers [True] == [1]
+            return data
+
+    spec = registry_for(lambda _: Output(), schema=Changed).catalog()[0]
+    checked = Gate(GRANT, DenyAll()).authorize(
+        spec, {"public": trusted([1]), "hidden": tainted("secret")}, context()
+    )
+    assert checked.args["public"].label.is_tainted
+    assert not checked.verdict.allowed

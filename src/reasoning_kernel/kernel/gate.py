@@ -12,6 +12,7 @@ from reasoning_kernel.schemas.capability import CapabilitySet, EffectLevel
 from reasoning_kernel.schemas.ids import StepId
 from reasoning_kernel.schemas.policy import DeclassPolicy, RunContext, VerifierVerdict
 from reasoning_kernel.schemas.registry import ToolSpec
+from reasoning_kernel.schemas.trace import canonical_json
 from reasoning_kernel.schemas.values import TaintedValue
 
 
@@ -51,11 +52,15 @@ class Gate:
         values.update(model.model_extra or {})
         for key, value in values.items():
             original = named_args.get(key)
+            try:
+                unchanged = original is not None and canonical_json(value) == canonical_json(
+                    original.value
+                )
+            except (ValueError, TypeError):
+                unchanged = False  # opaque/custom objects conservatively inherit all input labels
             normalized[key] = TaintedValue(
                 value=value,
-                label=original.label
-                if original is not None and value == original.value
-                else combined,
+                label=original.label if original is not None and unchanged else combined,
                 produced_by=original.produced_by if original is not None else StepId("__default__"),
             )
         return model, normalized

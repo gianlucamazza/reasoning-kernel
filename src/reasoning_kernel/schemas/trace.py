@@ -25,8 +25,13 @@ from reasoning_kernel.schemas.values import TaintedValue
 
 def digest(value: object) -> str:
     """A short, stable content digest for trace records (not a security primitive)."""
-    encoded = json.dumps(_canonical(value), sort_keys=True, separators=(",", ":"), allow_nan=False)
+    encoded = canonical_json(value)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:12]
+
+
+def canonical_json(value: object) -> str:
+    """Canonical JSON preserving distinctions such as true versus 1, without hashing."""
+    return json.dumps(_canonical(value), sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
 def _canonical(value: object) -> JsonValue:
