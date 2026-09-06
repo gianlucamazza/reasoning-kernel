@@ -65,9 +65,9 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
-behind one interface (`reasoner/base.py`). The fungibility corollary is validated live: OpenAI and
-Deepseek return schema-valid `Plan`s through the same interface (`just test-live`); Anthropic is
-exercised on demand when its key is set.
+behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
+live contract (`just test-live`); `0.5.0rc1` qualifies DeepSeek while retaining OpenAI and Anthropic
+as supported, independently testable adapters.
 
 ## No effect bypasses the Verifier — by construction
 
@@ -107,7 +107,7 @@ just demo-merge      # MergeStep: combine several reads into one value; taint fl
 
 uv sync --all-extras           # explicit provider extra (dev also includes SDKs for mock tests)
 just demo-live   # end-to-end with a REAL planner/parser (needs a key in .env)
-just test-live   # optional: real Anthropic/OpenAI/Deepseek round-trips (needs API keys)
+just test-live   # configured real-provider round-trips; RK_LIVE_PROVIDERS makes a set mandatory
 ```
 
 See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the quality bar (coverage gate, strict typing,

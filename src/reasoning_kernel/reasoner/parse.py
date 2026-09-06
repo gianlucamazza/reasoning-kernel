@@ -45,7 +45,7 @@ def call_structured[T: BaseModel](
     if not isinstance(result.data, schema):
         raise ReasonerError("provider returned the wrong output model")
     try:
-        return schema.model_validate(result.data.model_dump(by_alias=True))
+        return schema.model_validate(result.data.model_dump(by_alias=False), by_name=True)
     except ValidationError:
         raise ReasonerError("provider returned invalid structured output") from None
 

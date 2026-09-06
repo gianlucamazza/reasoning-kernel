@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0rc1] - Unreleased
+## [0.5.0rc1] - 2026-09-06
 
 Operational embedding candidate. This entry does not imply a published release or live-adapter UAT.
 
@@ -19,14 +19,16 @@ Operational embedding candidate. This entry does not imply a published release o
 - Sanitized provider failure categories, HTTP status and allow-listed operational error codes.
 - Crash, concurrency, shared-budget, adapter-contract and provider failure regression tests.
 - Python 3.14 CI, locked dependencies, pinned actions and single-artifact release promotion with
-  version checks, isolated wheel smoke and TestPyPI served-byte verification.
+  a pinned/checksummed uv runtime, version checks, isolated wheel smoke and served-byte verification.
 - Operational/migration guide and conformance checklist.
 
 ### Changed
 
 - Require a patched `pydantic-settings>=2.14.2` (GHSA-4xgf-cpjx-pc3j) and refresh its lock entry.
 - Version the SQLite audit schema, migrate the unversioned candidate layout, reject unknown/newer
-  layouts, and verify the released bytes after both TestPyPI and PyPI publication.
+  layouts or missing key constraints, and verify released bytes after TestPyPI and PyPI publication.
+- Require an explicit live-provider set in release CI; `0.5.0rc1` qualifies DeepSeek while OpenAI
+  remains supported but is not live-qualified for this candidate.
 - Low-level interpreters reject reuse and context/trace mismatches; child IDs are opaque.
 - Limits span descendants; `RunLimits()` remains unbounded for explicit low-level wiring.
 - Failed tools stop later steps without implying rollback; output validation cannot undo a call.
@@ -176,6 +178,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.5.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc1
 [0.4.2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.2
 [0.4.1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.1
 [0.4.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.0

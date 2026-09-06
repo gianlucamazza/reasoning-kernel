@@ -28,3 +28,16 @@ def test_published_check_rejects_unknown_repository(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["check_published.py", "dist", "unknown"])
     with pytest.raises(ValueError, match="testpypi or pypi"):
         main()
+
+
+def test_workflows_pin_uv_and_release_requires_deepseek_live():
+    root = Path(__file__).parent.parent
+    workflows = [root / ".github/workflows/ci.yml", root / ".github/workflows/release.yml"]
+    combined = "\n".join(path.read_text() for path in workflows)
+    assert combined.count('version: "0.12.10"') == 3
+    checksum = "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
+    assert combined.count(f'checksum: "{checksum}"') == 3
+    release = workflows[1].read_text()
+    assert "live_providers: deepseek" in release
+    assert "DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}" in release
+    assert "secrets: inherit" not in release

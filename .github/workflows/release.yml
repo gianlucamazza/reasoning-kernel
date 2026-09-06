@@ -15,6 +15,10 @@ concurrency:
 jobs:
   quality:
     uses: ./.github/workflows/ci.yml
+    with:
+      live_providers: deepseek
+    secrets:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
 
   build:
     needs: quality
@@ -25,6 +29,8 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          version: "0.12.10"
+          checksum: "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
           python-version: "3.12"
       - run: uv sync --all-extras --locked
       - name: Validate tag and build

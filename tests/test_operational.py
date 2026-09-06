@@ -633,6 +633,31 @@ def test_sqlite_rejects_unknown_unversioned_layout(tmp_path):
         SQLiteTraceSink(path)
 
 
+@pytest.mark.parametrize(
+    "runs,events",
+    [
+        (
+            "CREATE TABLE runs (run_id TEXT)",
+            "CREATE TABLE events (root_run_id TEXT NOT NULL, seq INTEGER NOT NULL, "
+            "payload TEXT NOT NULL)",
+        ),
+        (
+            "CREATE TABLE runs (run_id TEXT PRIMARY KEY)",
+            "CREATE TABLE events (root_run_id TEXT NOT NULL, seq INTEGER NOT NULL, "
+            "payload TEXT NOT NULL, PRIMARY KEY(root_run_id, seq))",
+        ),
+    ],
+)
+def test_sqlite_rejects_same_columns_without_required_constraints(tmp_path, runs, events):
+    path = tmp_path / "unconstrained.sqlite"
+    database = sqlite3.connect(path)
+    database.execute(runs)
+    database.execute(events)
+    database.close()
+    with pytest.raises(TraceStorageError, match="layout"):
+        SQLiteTraceSink(path)
+
+
 def test_sqlite_rejects_invalid_event_payload(tmp_path):
     path = tmp_path / "invalid.sqlite"
     with SQLiteTraceSink(path) as sink:

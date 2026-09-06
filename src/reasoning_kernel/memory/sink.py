@@ -91,13 +91,22 @@ class SQLiteTraceSink:
 
     def _validate_layout(self) -> None:
         expected = {
-            "runs": ["run_id"],
-            "events": ["root_run_id", "seq", "payload"],
+            "runs": [("run_id", "TEXT", 0, 1)],
+            "events": [
+                ("root_run_id", "TEXT", 1, 1),
+                ("seq", "INTEGER", 1, 2),
+                ("payload", "TEXT", 1, 0),
+            ],
         }
-        for table, columns in expected.items():
-            actual = [row[1] for row in self._db.execute(f"PRAGMA table_info({table})")]
-            if actual != columns:
+        for table, layout in expected.items():
+            rows = self._db.execute(f"PRAGMA table_info({table})").fetchall()
+            actual = [(row[1], row[2].upper(), row[3], row[5]) for row in rows]
+            if actual != layout:
                 raise TraceStorageError("unsupported audit database layout")
+        foreign_keys = self._db.execute("PRAGMA foreign_key_list(events)").fetchall()
+        relationships = [(row[2], row[3], row[4]) for row in foreign_keys]
+        if relationships != [("runs", "root_run_id", "run_id")]:
+            raise TraceStorageError("unsupported audit database layout")
 
     def start(self, run_id: RunId) -> None:
         try:

@@ -138,7 +138,8 @@ file and is not tamper-evident storage.
 
 `just check` verifies lint, typing and coverage. `just package-check` checks wheel/sdist metadata and
 installs the wheel outside the source tree to exercise public imports and the deterministic demo.
-CI covers Python 3.12–3.14. Release tags must match package metadata. After tagged-commit checks,
-release builds once, records hashes, publishes to TestPyPI, verifies served bytes, then promotes those
-artifacts to PyPI and verifies the public bytes again. OIDC publishers/environments must be configured. These checks are distinct from
-live provider and host-adapter acceptance.
+CI covers Python 3.12–3.14. Release tags must match package metadata. The release's configured live
+providers must pass on the tagged commit before the package is built. It then builds once, records
+hashes, publishes to TestPyPI, verifies served bytes, promotes those artifacts to PyPI and verifies
+the public bytes again. OIDC publishers/environments must be configured. Provider qualification is
+still distinct from host-adapter acceptance.

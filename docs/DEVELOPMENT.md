@@ -47,10 +47,10 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
 3.12 + 3.13 + 3.14 matrix on push / PR and on release tags via a reusable workflow.
-`just package-check` validates wheel/sdist metadata and an isolated wheel install.
-The live provider job is manual only (`workflow_dispatch`), reading
-keys from repository secrets. Release notes live in [`CHANGELOG.md`](../CHANGELOG.md); security
-reporting and scope in [`SECURITY.md`](../SECURITY.md).
+`just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
+manually and when a release calls the reusable workflow with required providers. `0.5.0rc1` requires
+DeepSeek before package build or publication. Release notes live in [`CHANGELOG.md`](../CHANGELOG.md);
+security reporting and scope in [`SECURITY.md`](../SECURITY.md).
 
 The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.
 Operational contracts and migration are in [OPERATIONS.md](OPERATIONS.md); the integration
@@ -76,8 +76,13 @@ Keys are accepted under either their conventional bare name or an `RK_`-prefixed
 | Deepseek  | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY`   | `deepseek-v4-flash` (`deepseek-v4-pro`) |
 
 Other overrides (defaults in `config.py`): `RK_LLM_PROVIDER_DEFAULT`, `RK_LLM_MODEL_*`,
-`RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`, `RK_LLM_MAX_TOKENS`. A live test or demo **skips** any provider whose
-key is absent, so partial configuration is fine.
+`RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`, `RK_LLM_MAX_TOKENS`. With no selector, live tests
+skip providers whose keys are absent. Set `RK_LIVE_PROVIDERS` to a comma-separated set to exclude
+all other providers and require a configured key for every selected provider:
+
+```bash
+RK_LIVE_PROVIDERS=deepseek just test-live
+```
 
 Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
 ids are current as of July 2026; the defaults are the cost-effective tier, the variants the

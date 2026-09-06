@@ -8,7 +8,7 @@ module attribute takes effect.
 from __future__ import annotations
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import reasoning_kernel.reasoner.factory as factory
 from reasoning_kernel.reasoner.base import LLMProvider
@@ -55,3 +55,26 @@ def test_call_structured_defaults_max_tokens_from_settings() -> None:
 
     call_structured(_Capturing(), "p", _Out, model="m", max_tokens=99)
     assert seen["max_tokens"] == 99
+
+
+def test_call_structured_revalidates_distinct_aliases_by_field_name() -> None:
+    from reasoning_kernel.reasoner.base import LLMResult, LLMUsage
+    from reasoning_kernel.reasoner.parse import call_structured
+
+    class Aliased(BaseModel):
+        value: int = Field(validation_alias="input_value", serialization_alias="output_value")
+
+    class _AliasedProvider:
+        name = "aliased"
+        supports_prompt_cache = False
+        supports_structured_output = True
+
+        def parse(self, **_kw: object) -> LLMResult[Aliased]:
+            return LLMResult(
+                data=Aliased.model_validate({"input_value": 7}),
+                usage=LLMUsage(),
+                model="m",
+                provider=self.name,
+            )
+
+    assert call_structured(_AliasedProvider(), "p", Aliased, model="m").value == 7

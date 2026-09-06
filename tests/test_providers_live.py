@@ -2,13 +2,16 @@
 
 Run with ``just test-live`` or ``uv run pytest -m live``. Each provider must return a schema-valid
 Plan through the single Reasoner interface — the fungibility corollary, exercised against real APIs.
-A provider is skipped when its key is not configured (via env or ``.env``); set keys in ``.env``.
+Without ``RK_LIVE_PROVIDERS``, a provider is skipped when its key is absent. With the selector,
+every listed provider and key is required while all other providers are explicitly excluded.
 """
 
 from __future__ import annotations
 
+import os
+
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from reasoning_kernel.config import settings
 from reasoning_kernel.kernel.session import RunSession
@@ -24,8 +27,6 @@ from reasoning_kernel.schemas.policy import RunContext, TrustedQuery, VerifierVe
 from reasoning_kernel.schemas.registry import ToolSpec
 from reasoning_kernel.tools.registry import ToolRegistry
 
-pytestmark = pytest.mark.live
-
 # Read from the loaded configuration (which sources .env), not just os.environ, so the live
 # tests run identically under `just test-live` and a plain `uv run pytest -m live`.
 _PROVIDER_SECRETS = {
@@ -34,13 +35,33 @@ _PROVIDER_SECRETS = {
     "deepseek": settings.deepseek_api_key,
 }
 
+_selection = os.environ.get("RK_LIVE_PROVIDERS")
+_SELECTED_PROVIDERS = (
+    frozenset(name.strip() for name in _selection.split(",") if name.strip())
+    if _selection is not None
+    else None
+)
+if _SELECTED_PROVIDERS is not None:
+    unknown = _SELECTED_PROVIDERS.difference(_PROVIDER_SECRETS)
+    if not _SELECTED_PROVIDERS or unknown:
+        raise RuntimeError("RK_LIVE_PROVIDERS must list known provider names")
+
 _PROMPT = "Emit a Plan with run_id 'live', a single ConstStep id='a' value='hello', and final='a'."
 
 
+def _require_provider(provider_name: str) -> None:
+    if _SELECTED_PROVIDERS is not None and provider_name not in _SELECTED_PROVIDERS:
+        pytest.skip(f"{provider_name} excluded by RK_LIVE_PROVIDERS")
+    if not _PROVIDER_SECRETS[provider_name].get_secret_value():
+        if _SELECTED_PROVIDERS is not None:
+            pytest.fail(f"required {provider_name} key not configured")
+        pytest.skip(f"{provider_name} key not configured")
+
+
+@pytest.mark.live
 @pytest.mark.parametrize("provider_name", list(_PROVIDER_SECRETS))
 def test_provider_returns_valid_plan(provider_name: str) -> None:
-    if not _PROVIDER_SECRETS[provider_name].get_secret_value():
-        pytest.skip(f"{provider_name} key not configured")
+    _require_provider(provider_name)
     provider = get_llm_provider(provider_name)
     plan = call_structured(
         provider, _PROMPT, Plan, model=default_model_for(provider_name), max_tokens=1024
@@ -54,10 +75,10 @@ def test_provider_returns_valid_plan(provider_name: str) -> None:
 _DEEPSEEK_MODELS = ["deepseek-v4-flash", "deepseek-v4-pro"]
 
 
+@pytest.mark.live
 @pytest.mark.parametrize("model", _DEEPSEEK_MODELS)
 def test_deepseek_model_returns_valid_plan(model: str) -> None:
-    if not _PROVIDER_SECRETS["deepseek"].get_secret_value():
-        pytest.skip("deepseek key not configured")
+    _require_provider("deepseek")
     provider = get_llm_provider("deepseek")
     plan = call_structured(provider, _PROMPT, Plan, model=model, max_tokens=1024)
     assert isinstance(plan, Plan)
@@ -84,11 +105,11 @@ class _RecipientPolicy:
         return VerifierVerdict(allowed=allowed, reason="recipient is requesting user")
 
 
+@pytest.mark.live
 @pytest.mark.parametrize("provider_name", ["openai", "deepseek"])
 def test_operational_session_with_live_quarantine_provider(provider_name: str, tmp_path) -> None:
     """Exercise Q-LLM, normalized WRITE and durable redacted audit; no external tool effect."""
-    if not _PROVIDER_SECRETS[provider_name].get_secret_value():
-        pytest.skip(f"{provider_name} key not configured")
+    _require_provider(provider_name)
     run_id = RunId(f"live-operational-{provider_name}")
     user = "user@example.com"
     plan = Plan(
@@ -147,3 +168,16 @@ def test_operational_session_with_live_quarantine_provider(provider_name: str, t
     serialized = "".join(event.model_dump_json() for event in persisted)
     assert "The project is ready" not in serialized
     assert sent[0].body not in serialized
+
+
+def test_selected_live_provider_requires_its_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(globals(), "_SELECTED_PROVIDERS", frozenset({"deepseek"}))
+    monkeypatch.setitem(_PROVIDER_SECRETS, "deepseek", SecretStr(""))
+    with pytest.raises(pytest.fail.Exception, match="required deepseek key"):
+        _require_provider("deepseek")
+
+
+def test_unselected_live_provider_is_explicitly_skipped(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(globals(), "_SELECTED_PROVIDERS", frozenset({"deepseek"}))
+    with pytest.raises(pytest.skip.Exception, match="excluded by RK_LIVE_PROVIDERS"):
+        _require_provider("openai")
