@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- SQLite audit discovery for reserved run IDs and runs needing operator review after incomplete or
+  uncertain execution.
+
 ### Fixed
 
 - Published-artifact verification ignores non-distribution files in the local build directory while

@@ -107,6 +107,10 @@ persist before the callable. Any append failure stops the run, returning `audit_
 terminal event cannot be written. Reservation errors raise `TraceStorageError` before execution.
 After a crash, `sink.read(run_id)` returns events, with no replay operation. A started invocation without
 completion requires reconciliation against the external system. Missing terminal events require review.
+`sink.list_run_ids()` discovers reserved roots, and `sink.runs_requiring_review()` returns roots that
+have no terminal event or contain a started invocation without a matching commit. These read-only
+helpers do not reconcile, retry or classify the external result; the host must inspect the events and
+the destination system before deciding what to do.
 
 The SQLite schema uses `PRAGMA user_version=1`. Opening an unversioned database created by the first
 0.5 candidate validates its exact table layout and marks it version 1 without rewriting events.
