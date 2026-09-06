@@ -7,18 +7,21 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
 
-**[Live site →](https://gianlucamazza.github.io/reasoning-kernel/)**
+**[Live site](https://gianlucamazza.github.io/reasoning-kernel/)** ·
+[Quick start](#quick-start) ·
+[Embedding](#embedding-the-kernel) ·
+[Conformance](#executable-host-conformance) ·
+[Operations](docs/OPERATIONS.md)
 
 **The problem.** An LLM agent that reads untrusted data — an email, a web page, a tool result — can
 be hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail,
-call tools on your behalf. This is a reference implementation of an architecture where untrusted
-model output **cannot bypass deterministic authorization** — by construction, not by prompt
-detection.
+call tools on your behalf.
 
-A small, framework-agnostic Python reference implementation of the **Reasoning Kernel** pattern in
-its strong, CaMeL-like form
-([Debenedetti et al., 2025](https://arxiv.org/abs/2503.18813)): every LLM is treated as **untrusted
-compute**, mediated by context on input and verification on output.
+**The approach.** This repository is a small, framework-agnostic Python reference implementation of
+the **Reasoning Kernel** pattern in its strong, CaMeL-like form
+([Debenedetti et al., 2025](https://arxiv.org/abs/2503.18813)). Every LLM is treated as **untrusted
+compute**, and its output **cannot bypass deterministic authorization** — by construction, not by
+prompt detection.
 
 > A Reasoning Kernel is an architecture in which probabilistic reasoning is treated as an untrusted
 > computational resource, mediated by context on input and verification on output.
@@ -58,14 +61,14 @@ model.
 
 ## Role → module map
 
-| Role (paper)   | Module                          | Reason to change                |
-|----------------|---------------------------------|---------------------------------|
-| Context        | `context/assembler.py`          | input-assembly / Invariant A    |
-| Reasoner(s)    | `reasoner/` (multi-provider)    | a provider or the interface     |
-| Conductor      | `kernel/interpreter.py`         | the execution loop              |
-| Verifier       | `kernel/gate.py`, `effects.py`  | verification policy             |
-| Tool catalog   | `tools/registry.py`             | sole holder of tool callables   |
-| Memory / Trace | `memory/`                       | durability / audit format       |
+| Role (paper)   | Module                                                                                                        | Reason to change              |
+| -------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Context        | [`context/assembler.py`](src/reasoning_kernel/context/assembler.py)                                          | input assembly / Invariant A  |
+| Reasoner(s)    | [`reasoner/`](src/reasoning_kernel/reasoner/) (multi-provider)                                                | provider or interface         |
+| Conductor      | [`kernel/interpreter.py`](src/reasoning_kernel/kernel/interpreter.py)                                        | execution loop                |
+| Verifier       | [`kernel/gate.py`](src/reasoning_kernel/kernel/gate.py), [`effects.py`](src/reasoning_kernel/kernel/effects.py) | verification policy           |
+| Tool catalog   | [`tools/registry.py`](src/reasoning_kernel/tools/registry.py)                                              | sole holder of tool callables |
+| Memory / Trace | [`memory/`](src/reasoning_kernel/memory/)                                                                     | durability / audit format     |
 
 Reasoner providers: Anthropic, OpenAI, DeepSeek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
@@ -97,7 +100,7 @@ and Anthropic remain independently contract-tested unless a release explicitly q
 
 Run it with `just demo` (the trace shows each gate decision and why).
 
-## Run it
+## Quick start
 
 ```bash
 uv sync --extra dev  # key-free: demo + the full default test suite
@@ -163,8 +166,8 @@ Expectations are fixed by the profile: applications cannot redefine a denial as 
 
 CLI exit codes:
 
-- `0` — every case passed;
-- `1` — at least one case failed or was inconclusive;
+- `0` — every case passed.
+- `1` — at least one case failed or was inconclusive.
 - `2` — invalid suite/runner, factory-load failure, execution error, serialization error or output
   write failure.
 
@@ -176,6 +179,9 @@ See [the conformance guide](docs/CONFORMANCE.md) for the required cases and host
 Explicit low-level wiring remains available. The package root re-exports the building blocks. This
 is a sketch; see [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete,
 runnable version:
+
+<details>
+<summary>Show the low-level wiring example</summary>
 
 ```python
 from pydantic import BaseModel
@@ -251,9 +257,12 @@ kernel = Interpreter(
 result = kernel.run(ctx)  # committed is None if the run failed closed
 ```
 
-**Status**: pre-1.0 — the public API may change between minor versions until 1.0. Released on
-[PyPI](https://pypi.org/project/capability-reasoning-kernel/) as `capability-reasoning-kernel`
-(imports as `reasoning_kernel`), and on TestPyPI.
+</details>
+
+> **Project status:** pre-1.0 — the public API may change between minor versions until 1.0.
+> Released on [PyPI](https://pypi.org/project/capability-reasoning-kernel/) as
+> `capability-reasoning-kernel` (imports as `reasoning_kernel`), and on
+> [TestPyPI](https://test.pypi.org/project/capability-reasoning-kernel/).
 
 ## What the kernel enforces
 
