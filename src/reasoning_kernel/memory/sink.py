@@ -7,8 +7,12 @@ import threading
 from pathlib import Path
 from typing import Protocol
 
+from pydantic import ValidationError
+
 from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.trace import AuditEvent
+
+_SCHEMA_VERSION = 1
 
 
 class TraceStorageError(RuntimeError):
@@ -57,6 +61,9 @@ class SQLiteTraceSink:
             raise TraceStorageError("cannot open audit database") from None
         try:
             self._initialize()
+        except TraceStorageError:
+            self._db.close()
+            raise
         except sqlite3.Error:
             self._db.close()
             raise TraceStorageError("cannot initialize audit database") from None
@@ -65,6 +72,11 @@ class SQLiteTraceSink:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=FULL")
         self._db.execute("PRAGMA foreign_keys=ON")
+        version = self._db.execute("PRAGMA user_version").fetchone()[0]
+        if version > _SCHEMA_VERSION:
+            raise TraceStorageError("audit database schema is newer than this package")
+        if version not in (0, _SCHEMA_VERSION):
+            raise TraceStorageError("unsupported audit database schema")
         with self._db:
             self._db.execute("CREATE TABLE IF NOT EXISTS runs (run_id TEXT PRIMARY KEY)")
             self._db.execute(
@@ -72,6 +84,20 @@ class SQLiteTraceSink:
                 "root_run_id TEXT NOT NULL REFERENCES runs(run_id),"
                 " seq INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(root_run_id, seq))"
             )
+            self._validate_layout()
+            if version == 0:
+                # Version zero is the schema shipped by the first 0.5 candidate implementation.
+                self._db.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
+
+    def _validate_layout(self) -> None:
+        expected = {
+            "runs": ["run_id"],
+            "events": ["root_run_id", "seq", "payload"],
+        }
+        for table, columns in expected.items():
+            actual = [row[1] for row in self._db.execute(f"PRAGMA table_info({table})")]
+            if actual != columns:
+                raise TraceStorageError("unsupported audit database layout")
 
     def start(self, run_id: RunId) -> None:
         try:
@@ -104,7 +130,10 @@ class SQLiteTraceSink:
                 ).fetchall()
         except sqlite3.Error:
             raise TraceStorageError("cannot read audit events") from None
-        return [AuditEvent.model_validate_json(row[0]) for row in rows]
+        try:
+            return [AuditEvent.model_validate_json(row[0]) for row in rows]
+        except ValidationError:
+            raise TraceStorageError("invalid audit event payload") from None
 
     def close(self) -> None:
         with self._lock:

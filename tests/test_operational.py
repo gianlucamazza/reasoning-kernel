@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import os
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -588,6 +589,58 @@ def test_sqlite_unavailable_is_a_sanitized_storage_error(tmp_path):
     sink.close()
     with pytest.raises(TraceStorageError, match="cannot read audit events"):
         sink.read(RunId("r"))
+
+
+def test_sqlite_marks_unversioned_candidate_layout_as_version_one(tmp_path):
+    path = tmp_path / "legacy.sqlite"
+    database = sqlite3.connect(path)
+    database.execute("CREATE TABLE runs (run_id TEXT PRIMARY KEY)")
+    database.execute(
+        "CREATE TABLE events (root_run_id TEXT NOT NULL REFERENCES runs(run_id), "
+        "seq INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(root_run_id, seq))"
+    )
+    database.execute("INSERT INTO runs VALUES ('legacy')")
+    database.execute(
+        "INSERT INTO events VALUES ('legacy', 0, ?)",
+        (AuditEvent(run_id=RunId("legacy"), seq=0).model_dump_json(),),
+    )
+    database.commit()
+    database.close()
+
+    with SQLiteTraceSink(path) as sink:
+        assert len(sink.read(RunId("legacy"))) == 1
+    database = sqlite3.connect(path)
+    assert database.execute("PRAGMA user_version").fetchone()[0] == 1
+    database.close()
+
+
+@pytest.mark.parametrize("schema", [2, 99])
+def test_sqlite_rejects_newer_schema_versions(tmp_path, schema):
+    path = tmp_path / "future.sqlite"
+    database = sqlite3.connect(path)
+    database.execute(f"PRAGMA user_version = {schema}")
+    database.close()
+    with pytest.raises(TraceStorageError, match="newer"):
+        SQLiteTraceSink(path)
+
+
+def test_sqlite_rejects_unknown_unversioned_layout(tmp_path):
+    path = tmp_path / "unknown.sqlite"
+    database = sqlite3.connect(path)
+    database.execute("CREATE TABLE runs (run_id TEXT PRIMARY KEY, unexpected TEXT)")
+    database.close()
+    with pytest.raises(TraceStorageError, match="layout"):
+        SQLiteTraceSink(path)
+
+
+def test_sqlite_rejects_invalid_event_payload(tmp_path):
+    path = tmp_path / "invalid.sqlite"
+    with SQLiteTraceSink(path) as sink:
+        sink.start(RunId("r"))
+        sink._db.execute("INSERT INTO events VALUES ('r', 0, '{\"schema_version\": 2}')")
+        sink._db.commit()
+        with pytest.raises(TraceStorageError, match="invalid audit event"):
+            sink.read(RunId("r"))
 
 
 def test_invalid_prebuilt_plan_is_revalidated_before_any_effect():

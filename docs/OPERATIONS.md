@@ -108,6 +108,10 @@ terminal event cannot be written. Reservation errors raise `TraceStorageError` b
 After a crash, `sink.read(run_id)` returns events, with no replay operation. A started invocation without
 completion requires reconciliation against the external system. Missing terminal events require review.
 
+The SQLite schema uses `PRAGMA user_version=1`. Opening an unversioned database created by the first
+0.5 candidate validates its exact table layout and marks it version 1 without rewriting events.
+Unknown layouts and newer versions fail closed; migrations are explicit in subsequent releases.
+
 Persistent events use `AuditEvent`, `schema_version=1`, root sequence, run/parent IDs, opaque step and
 invocation IDs, tool/provenance metadata, error codes and returned LLM usage/latency. Prompts, plans,
 payloads, content digests and raw exception messages are excluded. Host IDs, tool/capability names and
@@ -136,5 +140,5 @@ file and is not tamper-evident storage.
 installs the wheel outside the source tree to exercise public imports and the deterministic demo.
 CI covers Python 3.12–3.14. Release tags must match package metadata. After tagged-commit checks,
 release builds once, records hashes, publishes to TestPyPI, verifies served bytes, then promotes those
-artifacts to PyPI. OIDC publishers/environments must be configured. These checks are distinct from
+artifacts to PyPI and verifies the public bytes again. OIDC publishers/environments must be configured. These checks are distinct from
 live provider and host-adapter acceptance.
