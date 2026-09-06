@@ -206,6 +206,11 @@ def test_scenario_exception_is_inconclusive_and_redacted() -> None:
 def test_cli_writes_report_and_uses_documented_exit_codes(tmp_path, monkeypatch, capsys) -> None:
     module = ModuleType("host_conformance_fixture")
     module.build_suite = reference_suite
+    module.build_failing_suite = lambda: _replace_scenario(
+        reference_suite(),
+        ScenarioKind.BENIGN_EFFECT,
+        lambda: ConformanceObservation(unauthorized_effects=1),
+    )
     monkeypatch.setitem(sys.modules, module.__name__, module)
     report_path = tmp_path / "report.json"
 
@@ -215,6 +220,10 @@ def test_cli_writes_report_and_uses_documented_exit_codes(tmp_path, monkeypatch,
     assert report["profile"] == "operational-v1"
     assert report["passed"] is True
     assert "PASS operational-v1" in capsys.readouterr().out
+
+    assert main([f"{module.__name__}:build_failing_suite", "--output", str(report_path)]) == 1
+    assert json.loads(report_path.read_text())["passed"] is False
+    assert "FAIL operational-v1" in capsys.readouterr().out
 
     assert main(["invalid-reference"]) == 2
     assert "configuration or runner error" in capsys.readouterr().err

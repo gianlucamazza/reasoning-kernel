@@ -142,7 +142,8 @@ An application supplies a trusted zero-argument factory returning `ConformanceSu
 Each required `ScenarioKind` runs in isolation and returns a `ConformanceObservation` containing the
 decision or kernel result and counts observed in the external test world. Expectations are fixed by
 the profile: applications cannot redefine a denial as success. Exit `0` means every case passed; `1` means a failure or
-inconclusive case; `2` means the suite or runner was invalid. Reports contain only version metadata,
+inconclusive case; `2` means an invalid suite or runner, or an error while loading the factory, running
+the suite, serializing the report, or writing `--output`. Reports contain only version metadata,
 scenario/check identifiers and outcomes—never prompts, payloads, paths or raw provider errors.
 
 See [the conformance guide](docs/CONFORMANCE.md) for the required cases and host factory contract.
