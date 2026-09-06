@@ -94,6 +94,25 @@ def test_message_substring_does_not_trigger_fallback():
     assert api.calls == ["parse"]
 
 
+def test_transport_error_exposes_only_safe_diagnostics():
+    response = httpx.Response(429, request=httpx.Request("POST", "https://example.test"))
+    failure = openai.RateLimitError(
+        "SECRET raw message",
+        response=response,
+        body={"code": "credit_balance_exhausted", "message": "SECRET response body"},
+    )
+    provider, _ = parse(failure)
+    with pytest.raises(TransportError) as error:
+        invoke(provider)
+    assert error.value.category == "rate_limit"
+    assert error.value.status_code == 429
+    assert error.value.code == "credit_balance_exhausted"
+    assert str(error.value) == (
+        "OpenAI API failure (rate_limit, status=429, code=credit_balance_exhausted)"
+    )
+    assert "SECRET" not in str(error.value)
+
+
 def test_fallback_failure_is_terminal():
     provider, api = parse(
         bad_request(param="response_format"), bad_request(param="response_format")

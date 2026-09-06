@@ -10,7 +10,12 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
+from reasoning_kernel.reasoner.base import (
+    LLMResult,
+    LLMUsage,
+    ReasonerError,
+    provider_transport_error,
+)
 
 _BETA = "structured-outputs-2025-11-13"
 
@@ -63,8 +68,8 @@ class AnthropicProvider:
 
         try:
             response = self.client.messages.parse(**kwargs)
-        except anthropic.APIError:
-            raise TransportError("Anthropic API failure") from None
+        except anthropic.APIError as exc:
+            raise provider_transport_error("Anthropic", exc, "API failure") from None
         except ValidationError:
             raise ReasonerError("invalid structured output") from None
         if getattr(response, "stop_reason", None) == "max_tokens":

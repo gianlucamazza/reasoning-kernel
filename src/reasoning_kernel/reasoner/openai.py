@@ -13,7 +13,12 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
+from reasoning_kernel.reasoner.base import (
+    LLMResult,
+    LLMUsage,
+    ReasonerError,
+    provider_transport_error,
+)
 
 
 def _is_strict_schema_error(exc: Exception) -> bool:
@@ -101,16 +106,16 @@ class OpenAIProvider:
                     completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
             else:
                 completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
-        except openai.BadRequestError:
-            raise TransportError(f"{self.display_name} request rejected") from None
+        except openai.BadRequestError as exc:
+            raise provider_transport_error(self.display_name, exc, "request rejected") from None
         except openai.LengthFinishReasonError:
             raise ReasonerError("output truncated") from None
         except openai.ContentFilterFinishReasonError:
             raise ReasonerError("provider refused structured response") from None
         except ValidationError:
             raise ReasonerError("invalid structured output") from None
-        except openai.APIError:
-            raise TransportError(f"{self.display_name} API failure") from None
+        except openai.APIError as exc:
+            raise provider_transport_error(self.display_name, exc, "API failure") from None
 
         u = getattr(completion, "usage", None)
         usage = LLMUsage(

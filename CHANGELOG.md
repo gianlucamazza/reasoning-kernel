@@ -16,6 +16,7 @@ Operational embedding candidate. This entry does not imply a published release o
 - Correlated invocation IDs, parent run IDs, partial/uncertain effect outcomes and terminal run status.
 - Redacted operational events, detached snapshots and canonical detailed digests.
 - Bounded shared reasoner executor, returned usage/latency capture and public provider result types.
+- Sanitized provider failure categories, HTTP status and allow-listed operational error codes.
 - Crash, concurrency, shared-budget, adapter-contract and provider failure regression tests.
 - Python 3.14 CI, locked dependencies, pinned actions and single-artifact release promotion with
   version checks, isolated wheel smoke and TestPyPI served-byte verification.
