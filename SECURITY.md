@@ -39,8 +39,8 @@ permissive policy written on top of it.
 | Version | Supported |
 |---------|-----------|
 | `0.4.x` | ✅ |
-| `0.5.0rc2` | Current candidate; report issues, validate adapters before application use |
-| `0.5.0rc1` | Superseded candidate; upgrade to the current candidate |
+| `0.5.x` | ✅; validate host adapters before application use |
+| `0.5.0rc1`, `0.5.0rc2` | Superseded candidates; upgrade to `0.5.0` |
 | `< 0.4` | ❌ |
 
 ## Reporting a vulnerability

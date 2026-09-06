@@ -118,13 +118,13 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
 (the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
-Install the operational candidate explicitly with
-`pip install capability-reasoning-kernel==0.5.0rc2`.
+Install the operational release explicitly with
+`pip install capability-reasoning-kernel==0.5.0`.
 
 For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
 [operations and migration](docs/OPERATIONS.md) and the [conformance checklist](docs/CONFORMANCE.md).
-It isolates each run, records partial effects and refuses automatic replay. The 0.5 line is a
-published pre-release; package publication is not evidence of validated host integration.
+It isolates each run, records partial effects and refuses automatic replay. Package publication and
+consumer compatibility tests are not evidence that a host's live adapters are correctly configured.
 
 Explicit low-level wiring remains available. The package root re-exports the building blocks. Sketch (see
 [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):

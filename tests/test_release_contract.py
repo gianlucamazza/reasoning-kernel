@@ -8,20 +8,20 @@ from pathlib import Path
 import pytest
 
 
-@pytest.mark.parametrize("tag", ["v0.5.0", "0.5.0rc2", "v0.5.0rc1", "v0.5.0rc2-extra"])
+@pytest.mark.parametrize("tag", ["0.5.0", "v0.5.0rc2", "v0.5.0rc1", "v0.5.0-extra"])
 def test_release_rejects_mismatched_tag(tag):
     validate = runpy.run_path(str(Path(__file__).parent.parent / "scripts/check_version.py"))[
         "validate"
     ]
     with pytest.raises(ValueError):
-        validate(tag, "0.5.0rc2")
+        validate(tag, "0.5.0")
 
 
-def test_release_accepts_exact_candidate_tag():
+def test_release_accepts_exact_stable_tag():
     validate = runpy.run_path(str(Path(__file__).parent.parent / "scripts/check_version.py"))[
         "validate"
     ]
-    validate("v0.5.0rc2", "0.5.0rc2")
+    validate("v0.5.0", "0.5.0")
 
 
 def test_published_check_rejects_unknown_repository(monkeypatch):
