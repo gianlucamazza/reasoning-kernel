@@ -10,6 +10,7 @@ from types import ModuleType
 import pytest
 
 from reasoning_kernel.conformance import (
+    GATE_V1_KINDS,
     OPERATIONAL_V1_KINDS,
     ConformanceConfigurationError,
     ConformanceObservation,
@@ -36,12 +37,84 @@ def _replace_scenario(
     )
 
 
+def _gate_suite(
+    overrides: dict[ScenarioKind, ConformanceObservation] | None = None,
+) -> ConformanceSuite:
+    observations = {
+        kind: ConformanceObservation(
+            decision_allowed=kind == ScenarioKind.GATE_AUTHORIZED,
+            decision_enforced=kind != ScenarioKind.GATE_AUTHORIZED,
+            audit_recorded=True,
+        )
+        for kind in GATE_V1_KINDS
+    }
+    observations.update(overrides or {})
+    return ConformanceSuite(
+        name="gate-reference",
+        profile="gate-v1",
+        scenarios=tuple(
+            ConformanceScenario(kind, lambda observation=observations[kind]: observation)
+            for kind in GATE_V1_KINDS
+        ),
+    )
+
+
 def test_reference_suite_passes_complete_profile() -> None:
     report = run_conformance(reference_suite())
 
     assert report.passed
     assert [case.kind for case in report.cases] == list(OPERATIONAL_V1_KINDS)
     assert {case.outcome for case in report.cases} == {"pass"}
+
+
+def test_gate_profile_passes_and_is_distinct_from_operational_profile() -> None:
+    report = run_conformance(_gate_suite())
+
+    assert report.passed
+    assert report.profile == "gate-v1"
+    assert [case.kind for case in report.cases] == list(GATE_V1_KINDS)
+
+
+@pytest.mark.parametrize(
+    ("kind", "observation", "check"),
+    [
+        (
+            ScenarioKind.GATE_AUTHORIZED,
+            ConformanceObservation(
+                decision_allowed=False, decision_enforced=True, audit_recorded=True
+            ),
+            "authorized_gate_decision_missing",
+        ),
+        (
+            ScenarioKind.GATE_CAPABILITY_DENIED,
+            ConformanceObservation(
+                decision_allowed=False, decision_enforced=False, audit_recorded=True
+            ),
+            "denied_gate_decision_not_enforced",
+        ),
+        (
+            ScenarioKind.GATE_TAINTED_EGRESS_DENIED,
+            ConformanceObservation(
+                decision_allowed=False,
+                decision_enforced=True,
+                audit_recorded=True,
+                subsequent_effects=1,
+            ),
+            "pipeline_ran_after_gate_denial",
+        ),
+        (
+            ScenarioKind.GATE_INTERNAL_ERROR_DENIED,
+            ConformanceObservation(decision_allowed=False, decision_enforced=True),
+            "gate_audit_evidence_missing",
+        ),
+    ],
+)
+def test_gate_profile_rejects_invalid_evidence(kind, observation, check) -> None:
+    report = run_conformance(_gate_suite({kind: observation}))
+
+    case = next(item for item in report.cases if item.kind == kind)
+    assert case.outcome == "fail"
+    assert check in case.checks
 
 
 def test_suite_rejects_missing_and_duplicate_scenarios() -> None:

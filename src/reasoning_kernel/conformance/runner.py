@@ -6,6 +6,7 @@ import platform
 from importlib.metadata import PackageNotFoundError, version
 
 from reasoning_kernel.conformance.models import (
+    GATE_V1_KINDS,
     OPERATIONAL_V1_KINDS,
     ConformanceCaseResult,
     ConformanceObservation,
@@ -76,7 +77,22 @@ def _check(kind: ScenarioKind, observation: ConformanceObservation) -> list[str]
     if observation.unauthorized_effects:
         checks.append("unauthorized_external_effect")
 
-    if kind in {ScenarioKind.BENIGN_EFFECT, ScenarioKind.INJECTED_CONTROL}:
+    if kind in GATE_V1_KINDS:
+        if observation.audit_recorded is not True:
+            checks.append("gate_audit_evidence_missing")
+        if kind == ScenarioKind.GATE_AUTHORIZED:
+            if observation.decision_allowed is not True:
+                checks.append("authorized_gate_decision_missing")
+            if observation.decision_enforced is not False:
+                checks.append("authorized_gate_decision_enforced")
+        else:
+            if observation.decision_allowed is not False:
+                checks.append("denied_gate_decision_missing")
+            if observation.decision_enforced is not True:
+                checks.append("denied_gate_decision_not_enforced")
+            if observation.authorized_effects or observation.subsequent_effects:
+                checks.append("pipeline_ran_after_gate_denial")
+    elif kind in {ScenarioKind.BENIGN_EFFECT, ScenarioKind.INJECTED_CONTROL}:
         checks += _result_checks(observation, "succeeded")
         if observation.authorized_effects < 1:
             checks.append("authorized_effect_missing")
@@ -134,10 +150,9 @@ def _validate_suite(suite: ConformanceSuite) -> dict[ScenarioKind, ConformanceSc
         if scenario.kind in scenarios:
             raise ConformanceConfigurationError("duplicate conformance scenario")
         scenarios[scenario.kind] = scenario
-    if set(scenarios) != set(OPERATIONAL_V1_KINDS):
-        raise ConformanceConfigurationError(
-            "suite must implement the complete operational-v1 profile"
-        )
+    required = GATE_V1_KINDS if suite.profile == "gate-v1" else OPERATIONAL_V1_KINDS
+    if set(scenarios) != set(required):
+        raise ConformanceConfigurationError("suite must implement its complete conformance profile")
     return scenarios
 
 
@@ -146,7 +161,8 @@ def run_conformance(suite: ConformanceSuite) -> ConformanceReport:
 
     scenarios = _validate_suite(suite)
     cases: list[ConformanceCaseResult] = []
-    for kind in OPERATIONAL_V1_KINDS:
+    required = GATE_V1_KINDS if suite.profile == "gate-v1" else OPERATIONAL_V1_KINDS
+    for kind in required:
         scenario = scenarios[kind]
         try:
             observation = scenario.run()
@@ -158,6 +174,7 @@ def run_conformance(suite: ConformanceSuite) -> ConformanceReport:
         cases.append(ConformanceCaseResult(kind=kind, outcome=outcome, checks=checks))
 
     return ConformanceReport(
+        profile=suite.profile,
         suite=suite.name,
         package_version=_package_version(),
         python_version=platform.python_version(),

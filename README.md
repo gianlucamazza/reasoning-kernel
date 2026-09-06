@@ -128,8 +128,9 @@ consumer compatibility tests are not evidence that a host's live adapters are co
 
 ### Executable host conformance
 
-Version 0.6 adds a fixed `operational-v1` profile for turning host tests into sanitized, repeatable
-evidence. Run the key-free reference target:
+Version 0.6 adds fixed `gate-v1` and `operational-v1` profiles for turning host tests into sanitized,
+repeatable evidence. `gate-v1` covers hosts that use the verifier as a pre-pipeline checkpoint;
+`operational-v1` covers complete `RunSession` integrations. Run the key-free operational reference:
 
 ```bash
 reasoning-kernel-conformance \
@@ -137,10 +138,10 @@ reasoning-kernel-conformance \
   --output conformance.json
 ```
 
-An application supplies a trusted zero-argument factory returning `ConformanceSuite`. Each required
-`ScenarioKind` runs in isolation and returns a `ConformanceObservation` containing the kernel result
-and counts observed in the external test world. Expectations are fixed by the profile: applications
-cannot redefine a denial as success. Exit `0` means every case passed; `1` means a failure or
+An application supplies a trusted zero-argument factory returning `ConformanceSuite` for one profile.
+Each required `ScenarioKind` runs in isolation and returns a `ConformanceObservation` containing the
+decision or kernel result and counts observed in the external test world. Expectations are fixed by
+the profile: applications cannot redefine a denial as success. Exit `0` means every case passed; `1` means a failure or
 inconclusive case; `2` means the suite or runner was invalid. Reports contain only version metadata,
 scenario/check identifiers and outcomes—never prompts, payloads, paths or raw provider errors.
 

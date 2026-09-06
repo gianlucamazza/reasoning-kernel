@@ -55,7 +55,7 @@ workflow requires DeepSeek before package build or publication. Release notes li
 security reporting and scope in [`SECURITY.md`](../SECURITY.md).
 
 The conformance CLI is included in wheel smoke testing. It imports a trusted host factory, executes
-the fixed profile and returns a non-zero status for failures, inconclusive evidence or invalid suite
+the selected fixed profile and returns a non-zero status for failures, inconclusive evidence or invalid suite
 configuration; it never calls a live provider on its own.
 
 The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.

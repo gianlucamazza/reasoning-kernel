@@ -29,10 +29,23 @@ published-artifact and live-adapter evidence separately.
 Conformance does not include rollback, exactly-once external effects, automatic recovery, tamper-proof
 storage, a Python security sandbox or correctness of arbitrary declassification policies.
 
-## Executable profile (`operational-v1`)
+## Executable profiles
 
-The `reasoning_kernel.conformance` package turns the requirements above into a fixed host acceptance
-profile. A suite must provide each `ScenarioKind` exactly once:
+The `reasoning_kernel.conformance` package turns the requirements above into fixed host acceptance
+profiles. Use `gate-v1` when the host embeds the verifier as a pre-pipeline checkpoint but does not
+use `RunSession`; use `operational-v1` for the complete operational runtime. A suite selects one
+profile and must provide each of its `ScenarioKind` values exactly once.
+
+### `gate-v1`
+
+| Scenario | Required evidence |
+|---|---|
+| `gate_authorized` | An authorized proposal is allowed, not enforcement-skipped, and audited |
+| `gate_capability_denied` | Missing capability is denied, enforcement-skipped, audited, and launches nothing |
+| `gate_tainted_egress_denied` | Tainted egress is denied, enforcement-skipped, audited, and launches nothing |
+| `gate_internal_error_denied` | An internal mapping error fails closed, is audited, and launches nothing |
+
+### `operational-v1`
 
 | Scenario | Required evidence |
 |---|---|
@@ -46,8 +59,9 @@ profile. A suite must provide each `ScenarioKind` exactly once:
 | `audit_failure_before_dispatch` | Failure to persist the start prevents the callable |
 | `crash_reopen_no_replay` | The incomplete root is discoverable and its ID cannot be reused |
 
-The host factory is trusted Python code and must return a `ConformanceSuite`. Scenario callables build
-fresh sessions and test worlds, then return `ConformanceObservation`. `authorized_effects`,
+The host factory is trusted Python code and must return a `ConformanceSuite`. Operational scenario
+callables build fresh `RunSession` instances and test worlds. Gate scenarios exercise the host's real
+checkpoint in enforcement mode. Both return `ConformanceObservation`. `authorized_effects`,
 `unauthorized_effects` and `subsequent_effects` count externally visible WRITE effects, not READ calls
 or trace records. The host must observe the destination system or a faithful test double; the kernel
 cannot infer an external commit from its own log.
@@ -60,6 +74,7 @@ from reasoning_kernel.conformance import ConformanceScenario, ConformanceSuite, 
 def build_suite() -> ConformanceSuite:
     return ConformanceSuite(
         name="my-agent",
+        profile="operational-v1",
         scenarios=(
             ConformanceScenario(ScenarioKind.BENIGN_EFFECT, run_benign),
             # ...exactly one callable for every operational-v1 ScenarioKind...

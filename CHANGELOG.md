@@ -11,12 +11,14 @@ key-free profile without claiming that package tests replace live-adapter accept
 
 ### Added
 
-- Public `reasoning_kernel.conformance` API with a fixed `operational-v1` profile, trusted host
-  scenarios and external-effect observations.
+- Public `reasoning_kernel.conformance` API with fixed `gate-v1` and `operational-v1` profiles,
+  trusted host scenarios and external-effect observations.
 - Sanitized JSON reports with pass, fail and inconclusive outcomes, plus a
   `reasoning-kernel-conformance` CLI suitable for CI artifacts.
 - Nine-case reference suite covering benign and injected flows, capability denial, invalid output,
   failures around effects, audit failure and crash/reopen without replay.
+- Four-case Gate profile for consumers that use the verifier as a pre-pipeline checkpoint without
+  embedding the operational session runtime.
 - Structural report checks requiring every started effect to have a preceding successful Gate
   decision and every completion to follow its matching start.
 

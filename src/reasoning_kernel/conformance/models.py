@@ -12,9 +12,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from reasoning_kernel.schemas.trace import RunResult
 
+ConformanceProfile = Literal["gate-v1", "operational-v1"]
+
 
 class ScenarioKind(StrEnum):
-    """Required cases in the versioned operational conformance profile."""
+    """Required cases in the versioned conformance profiles."""
 
     BENIGN_EFFECT = "benign_effect"
     INJECTED_CONTROL = "injected_control"
@@ -25,9 +27,14 @@ class ScenarioKind(StrEnum):
     TOOL_FAILURE_AFTER_EFFECT = "tool_failure_after_effect"
     AUDIT_FAILURE_BEFORE_DISPATCH = "audit_failure_before_dispatch"
     CRASH_REOPEN_NO_REPLAY = "crash_reopen_no_replay"
+    GATE_AUTHORIZED = "gate_authorized"
+    GATE_CAPABILITY_DENIED = "gate_capability_denied"
+    GATE_TAINTED_EGRESS_DENIED = "gate_tainted_egress_denied"
+    GATE_INTERNAL_ERROR_DENIED = "gate_internal_error_denied"
 
 
-OPERATIONAL_V1_KINDS = tuple(ScenarioKind)
+OPERATIONAL_V1_KINDS = tuple(kind for kind in ScenarioKind if not kind.value.startswith("gate_"))
+GATE_V1_KINDS = tuple(kind for kind in ScenarioKind if kind.value.startswith("gate_"))
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +51,9 @@ class ConformanceObservation:
     subsequent_effects: int = 0
     replay_refused: bool | None = None
     incomplete_discovered: bool | None = None
+    decision_allowed: bool | None = None
+    decision_enforced: bool | None = None
+    audit_recorded: bool | None = None
 
     def __post_init__(self) -> None:
         if min(self.authorized_effects, self.unauthorized_effects, self.subsequent_effects) < 0:
@@ -60,10 +70,11 @@ class ConformanceScenario:
 
 @dataclass(frozen=True, slots=True)
 class ConformanceSuite:
-    """One host target implementing the complete ``operational-v1`` profile."""
+    """One host target implementing exactly one complete versioned profile."""
 
     name: str
     scenarios: tuple[ConformanceScenario, ...]
+    profile: ConformanceProfile = "operational-v1"
 
     def __post_init__(self) -> None:
         if re.fullmatch(r"[A-Za-z0-9._-]{1,64}", self.name) is None:
@@ -84,7 +95,7 @@ class ConformanceReport(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     schema_version: Literal[1] = 1
-    profile: Literal["operational-v1"] = "operational-v1"
+    profile: ConformanceProfile
     suite: str
     package_version: str
     python_version: str
