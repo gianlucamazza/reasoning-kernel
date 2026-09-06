@@ -124,6 +124,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             output_schema=ReadInboxOut,
             required_caps=frozenset({CAP_MAIL_READ}),
             effect_level=EffectLevel.READ,
+            args_leave_boundary=False,
             result_readers=frozenset(),  # untrusted content: may flow into no WRITE
             result_subjects=frozenset({DataSubject.USER}),  # the user's own mailbox
         ),
@@ -136,6 +137,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             output_schema=ReadContactsOut,
             required_caps=frozenset({CAP_CONTACTS_READ}),
             effect_level=EffectLevel.READ,
+            args_leave_boundary=False,
             result_readers=frozenset(),
             result_subjects=frozenset({DataSubject.THIRD_PARTY}),  # other people's data
         ),
@@ -148,6 +150,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             output_schema=SendEmailOut,
             required_caps=frozenset({CAP_MAIL_SEND}),
             effect_level=EffectLevel.WRITE,
+            args_leave_boundary=True,
         ),
         send_email,
     )
@@ -158,6 +161,7 @@ def build_registry(world: MailWorld) -> ToolRegistry:
             output_schema=CreateEventOut,
             required_caps=frozenset({CAP_CALENDAR_WRITE}),
             effect_level=EffectLevel.WRITE,
+            args_leave_boundary=True,
         ),
         create_event,
     )
@@ -170,9 +174,8 @@ Q_SCHEMAS: dict[str, type[BaseModel]] = {"EmailSummary": EmailSummary}
 class RecipientIsUserPolicy:
     """Declassify a tainted WRITE only when the recipient is the trusted requesting user.
 
-    Note (limit): this permits self-directed sends of any tainted body — including third-party data
-    mailed to oneself. It blocks exfiltration to third parties, which is the demo's threat model; it
-    is a property of this policy, not of the pattern. A stricter policy would scope by data subject.
+    Third-party bodies cannot be mailed even to the requesting user. This is an illustrative,
+    deterministic policy; an application must define its own subject and destination restrictions.
     """
 
     def may_declassify(

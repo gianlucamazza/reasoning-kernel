@@ -1,6 +1,6 @@
 """Capabilities and effect levels — the unit of authority the Verifier enforces.
 
-A capability is an unforgeable name for a permission (e.g. ``mail.send``). The kernel
+A capability is a host-issued name for a permission (e.g. ``mail.send``). The kernel
 grants a fixed ``CapabilitySet`` per run; a tool declares the capabilities it requires.
 Authority flows only through explicit grants — the object-capability discipline the paper
 borrows (Hardy 1988, the confused-deputy problem).

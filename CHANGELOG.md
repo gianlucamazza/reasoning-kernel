@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0rc1] - Unreleased
+
+Operational embedding candidate. This entry does not imply a published release or live-adapter UAT.
+
+### Added
+
+- Single-use `RunSession`, bounded operational defaults and root-wide step/tool/parser/LLM budgets.
+- Explicit tool egress declarations, normalized input verification and output model revalidation.
+- `TraceSink`, memory/SQLite sinks, durable pre-call records and fail-closed storage handling.
+- Correlated invocation IDs, parent run IDs, partial/uncertain effect outcomes and terminal run status.
+- Redacted operational events, detached snapshots and canonical detailed digests.
+- Bounded shared reasoner executor, returned usage/latency capture and public provider result types.
+- Crash, concurrency, shared-budget, adapter-contract and provider failure regression tests.
+- Python 3.14 CI, locked dependencies, pinned actions and single-artifact release promotion with
+  version checks, isolated wheel smoke and TestPyPI served-byte verification.
+- Operational/migration guide and conformance checklist.
+
+### Changed
+
+- Low-level interpreters reject reuse and context/trace mismatches; child IDs are opaque.
+- Limits span descendants; `RunLimits()` remains unbounded for explicit low-level wiring.
+- Failed tools stop later steps without implying rollback; output validation cannot undo a call.
+- OpenAI-compatible fallback uses structured error parameters, once; refusals/truncations and
+  malformed outputs are terminal errors. Provider exception messages no longer include raw API text.
+- Pyright explicitly resolves the project virtualenv. Documentation distinguishes root planning,
+  delegated untrusted planning and partial effects.
+
 ## [0.4.2] - 2026-07-10
 
 A correctness release for the gate's provenance stage, plus fail-closed hardening of the provider

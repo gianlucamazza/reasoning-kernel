@@ -11,13 +11,29 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from reasoning_kernel.reasoner.base import LLMResult, LLMUsage, ReasonerError, TransportError
 
 
 def _is_strict_schema_error(exc: Exception) -> bool:
-    return "response_format" in str(exc).lower()
+    param = getattr(exc, "param", None)
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        error = body.get("error", body)
+        if isinstance(error, dict):
+            param = param or error.get("param")
+    return isinstance(param, str) and (
+        param == "response_format" or param.startswith("response_format.")
+    )
+
+
+def _check_choice(choice: Any) -> None:
+    reason = getattr(choice, "finish_reason", None)
+    if reason == "length":
+        raise ReasonerError("output truncated")
+    if reason == "content_filter" or getattr(choice.message, "refusal", None):
+        raise ReasonerError("provider refused structured response")
 
 
 class OpenAIProvider:
@@ -71,29 +87,36 @@ class OpenAIProvider:
             if not completion.choices:
                 raise ReasonerError("provider returned no choices")
             choice = completion.choices[0]
-            if choice.message.refusal:
-                raise ReasonerError(
-                    f"provider refused structured response: {choice.message.refusal}"
-                )
+            _check_choice(choice)
             parsed = choice.message.parsed
             if parsed is None:
                 raise ReasonerError("provider returned no parsed content")
         except openai.BadRequestError as exc:
             if not _is_strict_schema_error(exc):
-                raise TransportError(f"OpenAI request rejected: {exc}") from exc
+                raise TransportError("OpenAI request rejected") from None
             try:
                 completion, parsed = self._parse_json_mode(messages, schema, model, max_tokens)
-            except openai.APIError as fallback_exc:
-                raise TransportError(
-                    f"OpenAI API failure in JSON-mode fallback: {fallback_exc}"
-                ) from fallback_exc
-        except openai.APIError as exc:
-            raise TransportError(f"OpenAI API failure: {exc}") from exc
+            except openai.APIError:
+                raise TransportError("OpenAI API failure in JSON-mode fallback") from None
+        except openai.LengthFinishReasonError:
+            raise ReasonerError("output truncated") from None
+        except openai.ContentFilterFinishReasonError:
+            raise ReasonerError("provider refused structured response") from None
+        except ValidationError:
+            raise ReasonerError("invalid structured output") from None
+        except openai.APIError:
+            raise TransportError("OpenAI API failure") from None
 
         u = getattr(completion, "usage", None)
         usage = LLMUsage(
             input_tokens=getattr(u, "prompt_tokens", 0) if u else 0,
             output_tokens=getattr(u, "completion_tokens", 0) if u else 0,
+            cache_read_tokens=getattr(getattr(u, "prompt_tokens_details", None), "cached_tokens", 0)
+            or 0,
+            reasoning_tokens=getattr(
+                getattr(u, "completion_tokens_details", None), "reasoning_tokens", 0
+            )
+            or 0,
         )
         return LLMResult(
             data=parsed,
@@ -129,5 +152,11 @@ class OpenAIProvider:
         )
         if not completion.choices:
             raise ReasonerError("provider returned no choices")
+        _check_choice(completion.choices[0])
         content = completion.choices[0].message.content or ""
-        return completion, schema.model_validate_json(content)
+        if not content.strip():
+            raise ReasonerError("provider returned empty content")
+        try:
+            return completion, schema.model_validate_json(content)
+        except ValidationError:
+            raise ReasonerError("invalid JSON-mode output") from None

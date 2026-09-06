@@ -62,9 +62,11 @@ def _ok_responses() -> dict[str, Response]:
     return {"Plan": benign_plan(RunId("r")), "EmailSummary": EmailSummary(text="ok")}
 
 
-def test_run_emits_plan_first_and_commit_last() -> None:
+def test_run_emits_plan_before_steps_and_commit_last() -> None:
     trace = _run(_ok_responses(), make_world(CLEAN_BODY))
-    assert isinstance(trace.events[0], PlanEmitted)
+    plan_index = next(i for i, e in enumerate(trace.events) if isinstance(e, PlanEmitted))
+    step_index = next(i for i, e in enumerate(trace.events) if isinstance(e, StepStarted))
+    assert plan_index < step_index
     assert isinstance(trace.events[-1], RunCommitted)
 
 

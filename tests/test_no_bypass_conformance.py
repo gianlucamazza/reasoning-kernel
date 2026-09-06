@@ -83,10 +83,14 @@ def test_every_committed_effect_was_gated_first() -> None:
         plan=benign_plan(RunId("r")),
         summary_text="ok",
     )
-    allowed_before: list[str] = []
+    allowed_before: set[str] = set()
     for e in trace.events:
         if isinstance(e, GateDecision) and e.verdict.allowed:
-            allowed_before.append(e.tool)
+            assert e.invocation_id is not None
+            allowed_before.add(e.invocation_id)
         if isinstance(e, EffectCommitted):
             # the matching allowed gate decision must already have been seen
-            assert e.tool in allowed_before, f"{e.tool} committed without a prior allowed gate"
+            assert e.invocation_id in allowed_before, (
+                f"{e.tool} committed without its own allowed gate"
+            )
+            allowed_before.remove(e.invocation_id)

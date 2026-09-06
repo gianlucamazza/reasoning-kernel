@@ -7,9 +7,10 @@ convenience that resolves a provider + model from settings — used by the demo 
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from reasoning_kernel.reasoner.base import LLMProvider
+from reasoning_kernel.reasoner.base import LLMProvider, ReasonerError
+from reasoning_kernel.reasoner.telemetry import record
 
 
 def _default_max_tokens() -> int:
@@ -39,7 +40,14 @@ def call_structured[T: BaseModel](
         max_tokens=max_tokens,
         cache_system=provider.supports_prompt_cache,
     )
-    return result.data
+    record(result)
+    # Provider adapters are replaceable: validate the boundary even for prebuilt model instances.
+    if not isinstance(result.data, schema):
+        raise ReasonerError("provider returned the wrong output model")
+    try:
+        return schema.model_validate(result.data.model_dump(by_alias=True))
+    except ValidationError:
+        raise ReasonerError("provider returned invalid structured output") from None
 
 
 def parse_with_schema[T: BaseModel](

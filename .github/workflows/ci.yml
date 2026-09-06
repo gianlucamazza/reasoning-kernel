@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch: # manual trigger for the optional live-provider job
+  workflow_call:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,21 +20,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
       - name: Install just
-        uses: extractions/setup-just@v4
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Sync dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --locked
 
       # The justfile uses `set dotenv-load`; provide a no-secret env so it loads cleanly.
       # The default suite is key-free and `live` tests are excluded via addopts -m 'not live'.
@@ -46,24 +52,29 @@ jobs:
       - name: Test
         run: just test # runs with coverage; fails under the threshold in pyproject
 
+      - name: Verify distribution
+        run: just package-check
+
   # Optional: real Anthropic/OpenAI/Deepseek round-trips. Manual only (needs API keys in secrets).
   live:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: "3.12"
           enable-cache: true
 
       - name: Install just
-        uses: extractions/setup-just@v4
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Sync dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-extras --locked
 
       - name: Run live provider tests
         env:

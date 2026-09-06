@@ -16,13 +16,13 @@ repos:
       - id: ruff-check
         name: ruff check --fix (uv.lock version, same as `just fix`)
         language: system
-        entry: uv run ruff check --fix src/ tests/
+        entry: uv run ruff check --fix src/ tests/ scripts/
         pass_filenames: false
         types_or: [python, pyi]
       - id: ruff-format
         name: ruff format (uv.lock version, same as `just fix`)
         language: system
-        entry: uv run ruff format src/ tests/
+        entry: uv run ruff format src/ tests/ scripts/
         pass_filenames: false
         types_or: [python, pyi]
       - id: pyright

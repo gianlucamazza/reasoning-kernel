@@ -17,8 +17,7 @@ class ReasonerError(Exception):
     """A provider failed to return a usable structured result.
 
     Covers empty/refused/malformed provider responses. The Conductor treats it as a fail-closed
-    condition — the run commits nothing — rather than a crash, so a flaky reasoner can never
-    produce a partial effect.
+    condition: subsequent work stops. Previously completed or uncertain tool effects remain real.
     """
 
 

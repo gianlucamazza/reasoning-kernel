@@ -5,8 +5,9 @@ How to work on the kernel, the quality bar it enforces, and how to run the live 
 ## Setup
 
 ```bash
-uv sync --extra dev       # key-free: demo + the full default test suite
-uv sync --all-extras      # also installs the provider SDKs (anthropic, openai) for live flows
+uv sync --extra dev       # key-free suite, including SDKs for mocked provider contract tests
+uv sync --all-extras      # development plus explicit provider extra
+uv sync --all-extras --locked  # reproduce CI without changing dependency resolution
 ```
 
 Python 3.12+ is required. The default suite needs no API keys: it runs against the deterministic
@@ -45,9 +46,17 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
   `schemas` + `kernel` + `memory`. Install once with `uv run pre-commit install`.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
-3.12 + 3.13 matrix on push / PR. The live provider job is manual only (`workflow_dispatch`), reading
+3.12 + 3.13 + 3.14 matrix on push / PR and on release tags via a reusable workflow.
+`just package-check` validates wheel/sdist metadata and an isolated wheel install.
+The live provider job is manual only (`workflow_dispatch`), reading
 keys from repository secrets. Release notes live in [`CHANGELOG.md`](../CHANGELOG.md); security
 reporting and scope in [`SECURITY.md`](../SECURITY.md).
+
+The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.
+Operational contracts and migration are in [OPERATIONS.md](OPERATIONS.md); the integration
+acceptance checklist is in [CONFORMANCE.md](CONFORMANCE.md). Provider refusal/truncation handling
+follows the [official structured-output contract](https://developers.openai.com/api/docs/guides/structured-outputs)
+and is exercised with SDK-shaped fixtures without API calls.
 
 ## Provider configuration
 

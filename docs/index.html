@@ -322,7 +322,7 @@
     <h2>A hijack hidden in data</h2>
     <p class="lede">An LLM agent that reads untrusted data — an email, a web page, a tool result — can be hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail, call tools on your behalf. This is a reference implementation of an architecture where such a hijack <em class="key">cannot cause an unauthorized effect</em> — not by detecting malicious prompts, but by construction.</p>
     <p class="lede"><em class="key">The mental model.</em> Treat the model as a brilliant but untrusted contractor. You are glad to use its reasoning, but you never hand it the keys: it proposes a plan, and a deterministic part of the system — one you wrote and can audit — decides what actually happens. The model never reads raw reality and never commits a real effect on its own.</p>
-    <p class="note">The pattern guarantees a <em class="key">topology, not a property</em>: it fixes <em>where</em> mediation and verification live. No matter what an injected message says, it can never reach the planner nor fire a tool without passing your Gate.</p>
+    <p class="note">The pattern guarantees a <em class="key">topology, not a property</em>: it fixes <em>where</em> mediation and verification live. The root planner is isolated from tool results. Delegated sub-planners see untrusted content under reduced grants; every tool invocation still passes its Gate.</p>
   </div>
 </section>
 
@@ -364,7 +364,7 @@
     <div class="cards">
       <div class="card">
         <h3><span class="tag-letter">A</span>Never sees raw reality</h3>
-        <p>Every model invocation gets a context the system assembled, controls, and can inspect. Untrusted data reaches a reasoner only through the quarantined parser, which cannot launder its taint. So an injection is never read as an instruction by the part that plans.</p>
+        <p>Every model invocation gets a context the system assembled, controls, and can inspect. Untrusted data reaches the quarantined parser or a delegated sub-planner under reduced authority. Their outputs retain provenance; the root planner does not see tool results.</p>
       </div>
       <div class="card">
         <h3><span class="tag-letter">B</span>Never commits reality</h3>
@@ -423,7 +423,7 @@
       <div class="role">
         <div class="head"><span class="name">Capabilities</span></div>
         <span class="mod">schemas/capability.py</span>
-        <p>Unforgeable permissions a run holds — its <code>CapabilitySet</code> (its grant). A tool requires specific caps; a sub-kernel's grant can only ever shrink, never widen.</p>
+        <p>Host-issued permissions a run holds — its <code>CapabilitySet</code> (its grant). A tool requires specific caps; a sub-kernel's grant can only ever shrink, never widen.</p>
       </div>
       <div class="role">
         <div class="head"><span class="name">Provenance / taint</span></div>
@@ -433,7 +433,7 @@
       <div class="role">
         <div class="head"><span class="name">Trace</span><span class="trust t">trusted</span></div>
         <span class="mod">memory/trace.py</span>
-        <p>An append-only record of every step and every gate decision, with its reason. Nothing commits silently; the whole run is auditable after the fact.</p>
+        <p>An append-only record of decisions and invocations. Operational sessions persist authorization and start before calling a tool. Missing completion after a crash means an uncertain effect requiring reconciliation.</p>
       </div>
     </div>
   </div>
@@ -578,7 +578,7 @@
     <ol class="proof">
       <li>Tool callables live only in <code>ToolRegistry</code>, handed only to <code>EffectDispatcher</code>; the interpreter never holds one.</li>
       <li><code>EffectDispatcher</code> cannot be constructed without a <code>Gate</code>, and <code>dispatch</code> checks it unconditionally before the callable runs.</li>
-      <li><code>ToolCallStep</code> is the only step kind that invokes a tool callable, and its only handler routes through the dispatcher. The other step kinds produce values, never external effects.</li>
+      <li><code>ToolCallStep</code> is the only step kind that invokes a tool callable, through the dispatcher. A sub-kernel may execute its own tool steps through a reduced Gate and the same dispatch path.</li>
     </ol>
   </div>
 </section>
@@ -636,7 +636,7 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
       <div><dt>Taint / provenance</dt><dd>Every value carries a <code>ProvenanceLabel</code> recording where it came from (sources), where it may flow (readers), and whose data it is (subjects).</dd></div>
       <div><dt>Join</dt><dd>Combining values combines their labels conservatively (union of sources, intersection of readers, union of subjects), so taint only ever increases.</dd></div>
       <div><dt>Quarantine</dt><dd>Routing untrusted content through the Q-LLM, which turns it into typed data and cannot launder its taint.</dd></div>
-      <div><dt>Capability / grant</dt><dd>An unforgeable permission a tool requires; a run holds a fixed <code>CapabilitySet</code> (its grant), and a sub-kernel's grant can only ever shrink.</dd></div>
+      <div><dt>Capability / grant</dt><dd>A host-issued permission a tool requires; a run holds a fixed <code>CapabilitySet</code> (its grant), and a sub-kernel's grant can only ever shrink.</dd></div>
       <div><dt>Declassifier</dt><dd>The single deterministic seam (<code>DeclassPolicy</code>) that may let tainted data into a WRITE — the one place trust is deliberately relaxed.</dd></div>
       <div><dt>Gate</dt><dd>The deterministic verifier every effect passes through: capability + schema + provenance.</dd></div>
     </dl>
