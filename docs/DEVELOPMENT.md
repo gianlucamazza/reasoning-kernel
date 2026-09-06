@@ -48,8 +48,9 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and the covered test suite on a Python
 3.12 + 3.13 + 3.14 matrix on push / PR and on release tags via a reusable workflow.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
-manually and when a release calls the reusable workflow with required providers. `0.5.0rc1` requires
-DeepSeek before package build or publication. Release notes live in [`CHANGELOG.md`](../CHANGELOG.md);
+manually and when a release calls the reusable workflow with required providers. The 0.5 release
+workflow requires DeepSeek before package build or publication. Release notes live in
+[`CHANGELOG.md`](../CHANGELOG.md);
 security reporting and scope in [`SECURITY.md`](../SECURITY.md).
 
 The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.

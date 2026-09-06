@@ -94,7 +94,7 @@ jobs:
       - name: Build distribution
         run: |
           uv sync --all-extras --locked
-          uv build
+          uv build --clear
           uv run twine check --strict dist/*
           uv run python scripts/check_artifacts.py dist
           sha256sum dist/* > SHA256SUMS

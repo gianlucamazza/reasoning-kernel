@@ -4,7 +4,10 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0rc2] - 2026-09-06
+
+Maintenance candidate following the first published operational release. Publication remains
+separate from live host-adapter acceptance.
 
 ### Added
 
@@ -17,11 +20,12 @@ All notable changes to this project are documented here. The format is based on
   optional dependency ranges below the next untested major versions.
 - Upgrade SHA-pinned GitHub Actions and add a CI upload/download checksum round trip for release
   artifacts; group future Actions updates into one Dependabot pull request.
+- Refresh the locked Pydantic, pytest and ruff versions used by CI and local development.
 
 ### Fixed
 
-- Published-artifact verification ignores non-distribution files in the local build directory while
-  still requiring exactly one wheel and one source distribution.
+- Package builds clear stale distributions, while published-artifact verification ignores unrelated
+  files and still requires exactly one wheel and one source distribution.
 
 ## [0.5.0rc1] - 2026-09-06
 
@@ -197,6 +201,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.5.0rc2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc2
 [0.5.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc1
 [0.4.2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.2
 [0.4.1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.4.1
