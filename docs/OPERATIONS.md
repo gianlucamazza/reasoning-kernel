@@ -1,4 +1,4 @@
-# Operational embedding and migration (0.5)
+# Operational embedding and migration
 
 `RunSession` is the bounded, single-use entry point. The host supplies authenticated identity, a
 trusted query, a fixed grant, deterministic policy, schemas and adapters. Authentication, scheduling,

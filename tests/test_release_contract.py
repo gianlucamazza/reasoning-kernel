@@ -75,9 +75,11 @@ def test_workflows_pin_uv_and_release_requires_deepseek_live():
     root = Path(__file__).parent.parent
     workflows = [root / ".github/workflows/ci.yml", root / ".github/workflows/release.yml"]
     combined = "\n".join(path.read_text() for path in workflows)
-    assert combined.count('version: "0.12.10"') == 4
+    setup_uv_uses = combined.count("uses: astral-sh/setup-uv@")
+    assert setup_uv_uses > 0
+    assert combined.count('version: "0.12.10"') == setup_uv_uses
     checksum = "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
-    assert combined.count(f'checksum: "{checksum}"') == 4
+    assert combined.count(f'checksum: "{checksum}"') == setup_uv_uses
     assert "artifact-roundtrip:" in workflows[0].read_text()
     assert "sha256sum --check SHA256SUMS" in workflows[0].read_text()
     assert combined.count("uv build --clear") == 2

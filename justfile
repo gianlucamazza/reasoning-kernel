@@ -1,13 +1,17 @@
 set dotenv-load := true
 
 # everything CI runs, locally, in one command
-check: lint typecheck test
+check: lint typecheck test docs-check
 
 # Build and validate the distribution, including an install outside the checkout.
 package-check:
     uv build --clear
     uv run twine check --strict dist/*
     uv run python scripts/check_artifacts.py dist
+
+# validate documentation structure, claims and release metadata
+docs-check:
+    uv run python scripts/check_docs.py
 
 # lint (ruff check + format check)
 lint:
