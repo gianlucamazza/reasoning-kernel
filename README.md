@@ -118,8 +118,8 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
 (the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
-Install the conformance candidate explicitly with
-`pip install capability-reasoning-kernel==0.6.0rc1`.
+Install the conformance release explicitly with
+`pip install capability-reasoning-kernel==0.6.0`.
 
 For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
 [operations and migration](docs/OPERATIONS.md) and the [conformance checklist](docs/CONFORMANCE.md).

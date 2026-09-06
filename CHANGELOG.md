@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-09-06
+
+Stable executable host-conformance release. It promotes the candidate after reference, package,
+provider and real-consumer validation while keeping live host-adapter acceptance a separate claim.
+
+### Changed
+
+- Validate all nine `operational-v1` cases through the packaged reference target and all four
+  `gate-v1` cases through Vibemonitor's real pre-pipeline checkpoint on Python 3.12 and 3.13.
+- Verify the release wheel and source distribution through checksummed CI round trips, isolated
+  installation, TestPyPI and PyPI publication, plus the required live DeepSeek provider gate.
+- Preserve the evidence boundary: consumer conformance does not establish an organic
+  enforce-to-PR run, complete `RunSession` adoption, or live adapter UAT.
+
 ## [0.6.0rc1] - 2026-09-06
 
 First executable host-conformance candidate. It turns the operational checklist into a versioned,
@@ -232,6 +246,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.6.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.0
 [0.6.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.0rc1
 [0.5.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0
 [0.5.0rc2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc2
