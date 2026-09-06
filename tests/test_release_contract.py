@@ -2,6 +2,7 @@
 
 import runpy
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -28,6 +29,15 @@ def test_published_check_rejects_unknown_repository(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["check_published.py", "dist", "unknown"])
     with pytest.raises(ValueError, match="testpypi or pypi"):
         main()
+
+
+def test_provider_sdk_ranges_exclude_untested_majors():
+    project = tomllib.loads(Path("pyproject.toml").read_text())["project"]
+    assert set(project["optional-dependencies"]["providers"]) == {
+        "anthropic>=0.40,<2",
+        "openai>=1.50,<4",
+    }
+    assert "httpx2>=2.12,<3" in project["optional-dependencies"]["dev"]
 
 
 def test_published_check_selects_only_wheel_and_sdist(tmp_path):
