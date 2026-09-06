@@ -4,9 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Published-artifact verification ignores non-distribution files in the local build directory while
+  still requiring exactly one wheel and one source distribution.
+
 ## [0.5.0rc1] - 2026-09-06
 
-Operational embedding candidate. This entry does not imply a published release or live-adapter UAT.
+Published operational embedding candidate. Publication does not imply live-adapter UAT.
 
 ### Added
 
