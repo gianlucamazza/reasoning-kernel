@@ -66,7 +66,7 @@ The trusted, deterministic kernel is the **interpreter + capability/provenance g
 Reasoner providers: Anthropic, OpenAI, Deepseek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
 behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
-live contract (`just test-live`). The 0.5 release workflow requires DeepSeek qualification; OpenAI
+live contract (`just test-live`). The release workflow requires DeepSeek qualification; OpenAI
 and Anthropic remain independently contract-tested unless a release explicitly qualifies them live.
 
 ## No effect bypasses the Verifier — by construction
@@ -118,13 +118,33 @@ pre-commit) and how to configure provider keys. Release notes are in
 
 Install: `pip install capability-reasoning-kernel` — it **imports as** `import reasoning_kernel`
 (the PyPI name differs because `reasoning-kernel` was taken by an unrelated project).
-Install the operational release explicitly with
-`pip install capability-reasoning-kernel==0.5.0`.
+Install the conformance candidate explicitly with
+`pip install capability-reasoning-kernel==0.6.0rc1`.
 
 For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
 [operations and migration](docs/OPERATIONS.md) and the [conformance checklist](docs/CONFORMANCE.md).
 It isolates each run, records partial effects and refuses automatic replay. Package publication and
 consumer compatibility tests are not evidence that a host's live adapters are correctly configured.
+
+### Executable host conformance
+
+Version 0.6 adds a fixed `operational-v1` profile for turning host tests into sanitized, repeatable
+evidence. Run the key-free reference target:
+
+```bash
+reasoning-kernel-conformance \
+  reasoning_kernel.conformance.reference:reference_suite \
+  --output conformance.json
+```
+
+An application supplies a trusted zero-argument factory returning `ConformanceSuite`. Each required
+`ScenarioKind` runs in isolation and returns a `ConformanceObservation` containing the kernel result
+and counts observed in the external test world. Expectations are fixed by the profile: applications
+cannot redefine a denial as success. Exit `0` means every case passed; `1` means a failure or
+inconclusive case; `2` means the suite or runner was invalid. Reports contain only version metadata,
+scenario/check identifiers and outcomes—never prompts, payloads, paths or raw provider errors.
+
+See [the conformance guide](docs/CONFORMANCE.md) for the required cases and host factory contract.
 
 Explicit low-level wiring remains available. The package root re-exports the building blocks. Sketch (see
 [`demo/email_exfil.py`](src/reasoning_kernel/demo/email_exfil.py) for a complete, runnable version):

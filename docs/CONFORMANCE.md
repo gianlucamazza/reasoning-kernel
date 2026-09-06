@@ -28,3 +28,51 @@ published-artifact and live-adapter evidence separately.
 
 Conformance does not include rollback, exactly-once external effects, automatic recovery, tamper-proof
 storage, a Python security sandbox or correctness of arbitrary declassification policies.
+
+## Executable profile (`operational-v1`)
+
+The `reasoning_kernel.conformance` package turns the requirements above into a fixed host acceptance
+profile. A suite must provide each `ScenarioKind` exactly once:
+
+| Scenario | Required evidence |
+|---|---|
+| `benign_effect` | An authorized effect succeeds and is externally observable |
+| `injected_control` | Injected content cannot redirect control or the authorized destination |
+| `injected_egress` | An attempted tainted exfiltration is blocked with no unauthorized effect |
+| `capability_denied` | Missing authority blocks the WRITE before its callable |
+| `invalid_output` | Invalid adapter output is recorded and later effects do not run |
+| `tool_failure_before_effect` | The outcome is uncertain, no effect is observed and execution stops |
+| `tool_failure_after_effect` | The effect is observed but remains uncertain and execution stops |
+| `audit_failure_before_dispatch` | Failure to persist the start prevents the callable |
+| `crash_reopen_no_replay` | The incomplete root is discoverable and its ID cannot be reused |
+
+The host factory is trusted Python code and must return a `ConformanceSuite`. Scenario callables build
+fresh sessions and test worlds, then return `ConformanceObservation`. `authorized_effects`,
+`unauthorized_effects` and `subsequent_effects` count externally visible WRITE effects, not READ calls
+or trace records. The host must observe the destination system or a faithful test double; the kernel
+cannot infer an external commit from its own log.
+The suite name is a 1–64 character identifier containing only letters, digits, `.`, `_` or `-`; it
+must not contain a customer name, path or other operational data.
+
+```python
+from reasoning_kernel.conformance import ConformanceScenario, ConformanceSuite, ScenarioKind
+
+def build_suite() -> ConformanceSuite:
+    return ConformanceSuite(
+        name="my-agent",
+        scenarios=(
+            ConformanceScenario(ScenarioKind.BENIGN_EFFECT, run_benign),
+            # ...exactly one callable for every operational-v1 ScenarioKind...
+        ),
+    )
+```
+
+Run `reasoning-kernel-conformance my_agent.conformance:build_suite --output conformance.json`.
+The JSON schema is versioned independently from the profile. A report is deliberately payload-free
+and is evidence from trusted host observers, not a signed attestation. Passing it does not establish
+production identity mapping, credentials, network policy, retention or live-adapter correctness.
+
+In CI, install an exact package version, run the command above and retain `conformance.json` as an
+artifact only after the command exits successfully. Inspect `cases[].outcome` and `cases[].checks`:
+`fail` means observed evidence violated a fixed expectation, while `inconclusive` means the scenario
+could not produce trustworthy evidence. Neither is a pass and there is no permissive CLI override.

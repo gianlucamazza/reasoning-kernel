@@ -435,6 +435,11 @@
         <span class="mod">memory/trace.py</span>
         <p>An append-only record of decisions and invocations. Operational sessions persist authorization and start before calling a tool. Missing completion after a crash means an uncertain effect requiring reconciliation.</p>
       </div>
+      <div class="role">
+        <div class="head"><span class="name">Conformance kit</span><span class="trust t">trusted</span></div>
+        <span class="mod">conformance/</span>
+        <p>A fixed operational profile turns host scenarios and external observations into a sanitized CI report. Expectations belong to the profile, not to the host being tested.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -662,7 +667,7 @@ result = kernel.run(ctx)             <span class="c"># committed is None if it f
   <div class="wrap">
     <p class="eyebrow">Get started</p>
     <h2>Read it, fork it, conform to it</h2>
-    <p class="lede">It is a reference implementation and spec — a vetted skeleton, not a turn-key product. Install it, run the worked demo, or conform your own agent to the pattern.</p>
+    <p class="lede">It is a reference implementation and spec — a vetted skeleton, not a turn-key product. Install it, run the worked demo, then execute the versioned conformance profile against your own host.</p>
     <div class="cta">
       <div class="install">
         <span class="dollar">$</span>

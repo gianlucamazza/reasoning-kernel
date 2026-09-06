@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "capability-reasoning-kernel"
-version = "0.5.0"
+version = "0.6.0rc1"
 description = "Reference implementation of the Reasoning Kernel pattern (strong / CaMeL-like form)"
 authors = [{ name = "Gianluca Mazza — Venere Labs" }]
 license = { text = "MIT" }
@@ -46,6 +46,7 @@ dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.9", "pyright>=1.1.380", "twine
 
 [project.scripts]
 reasoning-kernel-demo = "reasoning_kernel.demo.email_exfil:main"
+reasoning-kernel-conformance = "reasoning_kernel.conformance.cli:entrypoint"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/reasoning_kernel"]
@@ -64,6 +65,7 @@ venv = ".venv"
 include = ["src/reasoning_kernel"]
 pythonVersion = "3.12"
 strict = [
+  "src/reasoning_kernel/conformance", # executable host acceptance contract
   "src/reasoning_kernel/schemas", # contract layer
   "src/reasoning_kernel/kernel",  # the trusted core: interpreter, gate, dispatcher, taint
   "src/reasoning_kernel/memory",  # trusted core: ValueStore (tainted-value custody) + TraceWriter

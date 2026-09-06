@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0rc1] - 2026-09-06
+
+First executable host-conformance candidate. It turns the operational checklist into a versioned,
+key-free profile without claiming that package tests replace live-adapter acceptance.
+
+### Added
+
+- Public `reasoning_kernel.conformance` API with a fixed `operational-v1` profile, trusted host
+  scenarios and external-effect observations.
+- Sanitized JSON reports with pass, fail and inconclusive outcomes, plus a
+  `reasoning-kernel-conformance` CLI suitable for CI artifacts.
+- Nine-case reference suite covering benign and injected flows, capability denial, invalid output,
+  failures around effects, audit failure and crash/reopen without replay.
+- Structural report checks requiring every started effect to have a preceding successful Gate
+  decision and every completion to follow its matching start.
+
 ## [0.5.0] - 2026-09-06
 
 First stable operational embedding release. It promotes the two release candidates after package,
@@ -214,6 +230,7 @@ Initial reference implementation of the Reasoning Kernel pattern (strong / CaMeL
 invariants, no-effect-bypasses-the-Verifier by construction, the deterministic declassification seam,
 and the worked email-exfiltration demo.
 
+[0.6.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.0rc1
 [0.5.0]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0
 [0.5.0rc2]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc2
 [0.5.0rc1]: https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.5.0rc1

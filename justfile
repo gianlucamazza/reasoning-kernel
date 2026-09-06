@@ -35,6 +35,10 @@ test-live:
 demo:
     uv run python -m reasoning_kernel.demo.email_exfil
 
+# run the complete key-free operational conformance profile
+conformance:
+    uv run reasoning-kernel-conformance reasoning_kernel.conformance.reference:reference_suite
+
 # run the demo end-to-end against a REAL provider (needs a key in .env)
 demo-live:
     uv run python -m reasoning_kernel.demo.live_run
