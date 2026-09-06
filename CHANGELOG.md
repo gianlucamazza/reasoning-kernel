@@ -15,6 +15,8 @@ All notable changes to this project are documented here. The format is based on
 
 - Validate the provider adapters against OpenAI SDK 3.7 and Anthropic SDK 1.4, while bounding their
   optional dependency ranges below the next untested major versions.
+- Upgrade SHA-pinned GitHub Actions and add a CI upload/download checksum round trip for release
+  artifacts; group future Actions updates into one Dependabot pull request.
 
 ### Fixed
 
