@@ -192,7 +192,7 @@ class _RaisingOpenAIClient:
 
 
 def test_openai_connection_error_maps_to_transport_error() -> None:
-    import httpx
+    import httpx2 as httpx
     import openai
 
     exc = openai.APIConnectionError(request=httpx.Request("POST", "https://api.openai.com"))
@@ -206,7 +206,7 @@ def test_openai_connection_error_maps_to_transport_error() -> None:
 
 
 def test_openai_non_schema_bad_request_maps_to_transport_error() -> None:
-    import httpx
+    import httpx2 as httpx
     import openai
 
     response = httpx.Response(400, request=httpx.Request("POST", "https://api.openai.com"), json={})
@@ -264,7 +264,7 @@ def test_anthropic_happy_path_returns_data() -> None:
 
 def test_anthropic_connection_error_maps_to_transport_error() -> None:
     import anthropic
-    import httpx
+    import httpx2 as httpx
 
     exc = anthropic.APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com"))
     prov = AnthropicProvider(client=_FakeAnthropicClient(None, exc=exc))

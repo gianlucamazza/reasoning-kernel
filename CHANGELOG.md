@@ -11,6 +11,11 @@ All notable changes to this project are documented here. The format is based on
 - SQLite audit discovery for reserved run IDs and runs needing operator review after incomplete or
   uncertain execution.
 
+### Changed
+
+- Validate the provider adapters against OpenAI SDK 3.7 and Anthropic SDK 1.4, while bounding their
+  optional dependency ranges below the next untested major versions.
+
 ### Fixed
 
 - Published-artifact verification ignores non-distribution files in the local build directory while
