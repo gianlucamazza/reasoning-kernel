@@ -75,9 +75,11 @@ def test_workflows_pin_uv_and_release_requires_deepseek_live():
     root = Path(__file__).parent.parent
     workflows = [root / ".github/workflows/ci.yml", root / ".github/workflows/release.yml"]
     combined = "\n".join(path.read_text() for path in workflows)
-    assert combined.count('version: "0.12.10"') == 3
+    assert combined.count('version: "0.12.10"') == 4
     checksum = "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
-    assert combined.count(f'checksum: "{checksum}"') == 3
+    assert combined.count(f'checksum: "{checksum}"') == 4
+    assert "artifact-roundtrip:" in workflows[0].read_text()
+    assert "sha256sum --check SHA256SUMS" in workflows[0].read_text()
     release = workflows[1].read_text()
     assert "live_providers: deepseek" in release
     assert "DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}" in release

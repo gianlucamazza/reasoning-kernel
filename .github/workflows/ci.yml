@@ -41,7 +41,7 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -76,12 +76,55 @@ jobs:
       - name: Verify distribution
         run: just package-check
 
+  artifact-roundtrip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.10"
+          checksum: "173d95a0c32d18c896c46ba6fafbf3cf9c14ab74b033f81b76c883ef492a976b"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Build distribution
+        run: |
+          uv sync --all-extras --locked
+          uv build
+          uv run twine check --strict dist/*
+          uv run python scripts/check_artifacts.py dist
+          sha256sum dist/* > SHA256SUMS
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ci-distribution
+          path: |
+            dist/
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Download distribution
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ci-distribution
+          path: roundtrip
+
+      - name: Verify downloaded bytes
+        working-directory: roundtrip
+        run: sha256sum --check SHA256SUMS
+
   # Explicit provider qualification: manual or required by the release's reusable workflow call.
   live:
     if: inputs.live_providers != ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
