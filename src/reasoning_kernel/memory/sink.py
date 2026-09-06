@@ -13,6 +13,13 @@ from reasoning_kernel.schemas.ids import RunId
 from reasoning_kernel.schemas.trace import AuditEvent
 
 _SCHEMA_VERSION = 1
+_TERMINAL_KINDS = {
+    "run_committed",
+    "run_blocked",
+    "plan_rejected",
+    "run_errored",
+    "run_aborted",
+}
 
 
 class TraceStorageError(RuntimeError):
@@ -143,6 +150,56 @@ class SQLiteTraceSink:
             return [AuditEvent.model_validate_json(row[0]) for row in rows]
         except ValidationError:
             raise TraceStorageError("invalid audit event payload") from None
+
+    def list_run_ids(self) -> list[RunId]:
+        """Return root run IDs in reservation order."""
+        try:
+            with self._lock:
+                rows = self._db.execute("SELECT run_id FROM runs ORDER BY rowid").fetchall()
+        except sqlite3.Error:
+            raise TraceStorageError("cannot list audit runs") from None
+        return [RunId(row[0]) for row in rows]
+
+    def runs_requiring_review(self) -> list[RunId]:
+        """Find roots with no terminal event or an unconfirmed invocation."""
+        try:
+            with self._lock:
+                rows = self._db.execute(
+                    "SELECT runs.run_id, events.payload FROM runs "
+                    "LEFT JOIN events ON events.root_run_id = runs.run_id "
+                    "ORDER BY runs.rowid, events.seq"
+                ).fetchall()
+        except sqlite3.Error:
+            raise TraceStorageError("cannot inspect audit runs") from None
+
+        events_by_run: dict[RunId, list[AuditEvent]] = {}
+        try:
+            for raw_run_id, payload in rows:
+                run_id = RunId(raw_run_id)
+                events_by_run.setdefault(run_id, [])
+                if payload is not None:
+                    events_by_run[run_id].append(AuditEvent.model_validate_json(payload))
+        except ValidationError:
+            raise TraceStorageError("invalid audit event payload") from None
+
+        review: list[RunId] = []
+        for run_id, events in events_by_run.items():
+            started = {
+                event.invocation_id
+                for event in events
+                if event.kind == "effect_started" and event.invocation_id is not None
+            }
+            committed = {
+                event.invocation_id
+                for event in events
+                if event.kind == "effect_committed" and event.invocation_id is not None
+            }
+            terminal = any(
+                event.run_id == run_id and event.kind in _TERMINAL_KINDS for event in events
+            )
+            if not terminal or started - committed:
+                review.append(run_id)
+        return review
 
     def close(self) -> None:
         with self._lock:
