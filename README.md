@@ -1,5 +1,7 @@
 # Reasoning Kernel
 
+![reasoning-kernel](docs/cover.jpg)
+
 [![PyPI](https://img.shields.io/pypi/v/capability-reasoning-kernel)](https://pypi.org/project/capability-reasoning-kernel/)
 [![Python](https://img.shields.io/pypi/pyversions/capability-reasoning-kernel)](https://pypi.org/project/capability-reasoning-kernel/)
 [![CI](https://github.com/gianlucamazza/reasoning-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/gianlucamazza/reasoning-kernel/actions/workflows/ci.yml)
