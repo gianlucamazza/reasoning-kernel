@@ -4,7 +4,25 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - 2026-10-04
+## [0.6.2] - 2026-10-04
+
+Publishes the conformance corrections below with the complete dependency security gate.
+
+### Fixed
+
+- Require patched urllib3 2.8.0 or newer for development/publishing tooling and refresh its lock.
+
+### Added
+
+- `just audit-deps` audits all locked extras/platforms using the standard pylock format and pinned
+  pip-audit. `just release-check` combines the offline aggregate and the online security gate.
+- Required dependency-audit job in the shared CI/release workflow, preventing publication when
+  known vulnerable dependencies or audit collection failures are detected.
+
+## [0.6.1] - 2026-10-04 (tagged, not published)
+
+Publication was cancelled before build/TestPyPI/PyPI after the refreshed dependency graph exposed
+urllib3 advisories. The tag remains immutable; 0.6.2 includes all changes below.
 
 Corrective release for host-conformance evidence validation. API signatures, report schema version 1,
 profile names and CLI exit codes are unchanged; contradictory observations now fail closed.

@@ -3,6 +3,18 @@ set dotenv-load := true
 # Complete offline quality gate for the current Python; CI adds the matrix and artifact round trip.
 check: lint typecheck test docs-check package-check
 
+# Full current-Python release gate, including the online vulnerability database.
+release-check: check audit-deps
+
+# Audit every locked extra/platform through the standard pylock format; never install or fix.
+audit-deps:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    audit_dir=$(mktemp -d)
+    trap 'rm -rf "$audit_dir"' EXIT
+    uv export --all-extras --locked --no-emit-project --format pylock.toml --output-file "$audit_dir/pylock.toml" --quiet
+    uvx --from pip-audit==2.10.1 pip-audit --locked --strict --progress-spinner off "$audit_dir"
+
 # Build and validate the distribution, including an install outside the checkout.
 package-check:
     uv build --clear
