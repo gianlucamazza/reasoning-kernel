@@ -189,6 +189,36 @@ def test_profile_rejects_effect_without_prior_gate() -> None:
     assert "effect_without_prior_authorization" in case.checks
 
 
+@pytest.mark.parametrize(
+    "kind",
+    [
+        ScenarioKind.INJECTED_EGRESS,
+        ScenarioKind.CAPABILITY_DENIED,
+        ScenarioKind.AUDIT_FAILURE_BEFORE_DISPATCH,
+    ],
+)
+def test_profile_rejects_effects_after_stop(kind) -> None:
+    suite = reference_suite()
+    scenario = next(item for item in suite.scenarios if item.kind == kind)
+    observation = replace(scenario.run(), subsequent_effects=1)
+    report = run_conformance(_replace_scenario(suite, kind, lambda: observation))
+    case = next(item for item in report.cases if item.kind == kind)
+    assert case.outcome == "fail"
+    assert "execution_continued_after_stop" in case.checks
+
+
+def test_profile_rejects_completed_effect_with_empty_trace() -> None:
+    suite = reference_suite()
+    observation = suite.scenarios[0].run()
+    assert observation.result is not None
+    observation.result.trace.events.clear()
+    report = run_conformance(
+        _replace_scenario(suite, ScenarioKind.BENIGN_EFFECT, lambda: observation)
+    )
+    assert report.cases[0].outcome == "fail"
+    assert "effect_outcome_without_start" in report.cases[0].checks
+
+
 def test_scenario_exception_is_inconclusive_and_redacted() -> None:
     def fail() -> ConformanceObservation:
         raise RuntimeError("SECRET injected prompt and /private/path")
@@ -227,3 +257,90 @@ def test_cli_writes_report_and_uses_documented_exit_codes(tmp_path, monkeypatch,
 
     assert main(["invalid-reference"]) == 2
     assert "configuration or runner error" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "mutation,check",
+    [
+        ("missing_start", "effect_outcome_without_start"),
+        ("missing_completion", "effect_outcome_mismatch"),
+        ("missing_outcome", "effect_outcome_missing"),
+        ("duplicate_gate", "duplicate_gate_decision"),
+        ("duplicate_start", "duplicate_effect_start"),
+        ("duplicate_completion", "duplicate_effect_completion"),
+        ("duplicate_outcome", "duplicate_effect_outcome"),
+        ("missing_invocation", "invocation_id_missing"),
+        ("wrong_gate_run", "effect_identity_mismatch"),
+        ("wrong_completion_tool", "effect_identity_mismatch"),
+        ("wrong_completion_parent", "effect_identity_mismatch"),
+        ("wrong_outcome_step", "effect_outcome_identity_mismatch"),
+        ("wrong_outcome_status", "effect_outcome_mismatch"),
+        ("wrong_output_validity", "effect_outcome_mismatch"),
+        ("missing_output_validity", "effect_output_validity_missing"),
+        ("completion_before_start", "effect_completion_without_start"),
+        ("missing_terminal", "root_terminal_mismatch"),
+        ("wrong_terminal", "root_terminal_mismatch"),
+        ("duplicate_terminal", "root_terminal_mismatch"),
+        ("foreign_terminal", "root_terminal_mismatch"),
+        ("event_after_terminal", "root_terminal_mismatch"),
+    ],
+)
+def test_profile_rejects_inconsistent_effect_evidence(mutation, check):
+    suite = reference_suite()
+    observation = suite.scenarios[0].run()
+    result = observation.result
+    assert result is not None
+    events = result.trace.events
+    gate = next(e for e in events if e.kind == "gate_decision")
+    start = next(e for e in events if e.kind == "effect_started")
+    completion = next(e for e in events if e.kind == "effect_committed")
+    terminal = events[-1]
+    outcome = result.effects[0]
+    if mutation == "missing_start":
+        events.remove(start)
+    elif mutation == "missing_completion":
+        events.remove(completion)
+    elif mutation == "missing_outcome":
+        result.effects.clear()
+    elif mutation.startswith("duplicate_"):
+        targets = {"gate": gate, "start": start, "completion": completion, "terminal": terminal}
+        suffix = mutation.removeprefix("duplicate_")
+        if suffix == "outcome":
+            result.effects.append(outcome.model_copy(deep=True))
+        else:
+            target = targets[suffix]
+            events.insert(events.index(target) + 1, target.model_copy(deep=True))
+    elif mutation == "missing_invocation":
+        start.invocation_id = None
+    elif mutation == "wrong_gate_run":
+        gate.run_id = "foreign"
+    elif mutation == "wrong_completion_tool":
+        completion.metadata["tool"] = "foreign"
+    elif mutation == "wrong_completion_parent":
+        completion.parent_run_id = "foreign"
+    elif mutation == "wrong_outcome_step":
+        outcome.step_id = "foreign"
+    elif mutation == "wrong_outcome_status":
+        outcome.status = "uncertain"
+    elif mutation == "wrong_output_validity":
+        outcome.output_valid = False
+    elif mutation == "missing_output_validity":
+        del completion.metadata["output_valid"]
+    elif mutation == "completion_before_start":
+        events.remove(completion)
+        events.insert(events.index(start), completion)
+    elif mutation == "missing_terminal":
+        events.remove(terminal)
+    elif mutation == "wrong_terminal":
+        terminal.kind = "run_blocked"
+    elif mutation == "foreign_terminal":
+        terminal.run_id = "foreign"
+    elif mutation == "event_after_terminal":
+        events.append(events[0].model_copy(deep=True))
+    for seq, event in enumerate(events):
+        event.seq = seq
+    report = run_conformance(
+        _replace_scenario(suite, ScenarioKind.BENIGN_EFFECT, lambda: observation)
+    )
+    assert report.cases[0].outcome == "fail"
+    assert check in report.cases[0].checks

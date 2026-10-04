@@ -82,17 +82,8 @@ jobs:
       - name: Prepare env
         run: cp .env.example .env
 
-      - name: Lint
-        run: just lint
-
-      - name: Typecheck
-        run: just typecheck
-
-      - name: Test
-        run: just test # runs with coverage; fails under the threshold in pyproject
-
-      - name: Verify distribution
-        run: just package-check
+      - name: Offline quality gate
+        run: just check
 
   artifact-roundtrip:
     runs-on: ubuntu-latest

@@ -43,37 +43,136 @@ def _has_effect(observation: ConformanceObservation, *, status: str | None = Non
     return any(status is None or effect.status == status for effect in observation.result.effects)
 
 
+def _event_identity(event: AuditEvent) -> tuple[object, ...]:
+    return (event.run_id, event.parent_run_id, event.step_id, event.metadata.get("tool"))
+
+
 def _trace_checks(observation: ConformanceObservation) -> list[str]:
-    if observation.result is None:
+    result = observation.result
+    if result is None:
         return []
-    events = observation.result.trace.events
+    events = result.trace.events
     checks: list[str] = []
     if [event.seq for event in events] != list(range(len(events))):
         checks.append("invalid_trace_sequence")
-    for index, event in enumerate(events):
-        if event.kind not in {"effect_started", "effect_committed", "effect_failed"}:
+    gates: dict[str, AuditEvent] = {}
+    starts: dict[str, AuditEvent] = {}
+    completions: dict[str, AuditEvent] = {}
+    for event in events:
+        if event.kind not in {
+            "gate_decision",
+            "effect_started",
+            "effect_committed",
+            "effect_failed",
+        }:
             continue
-        earlier = events[:index]
-        if event.kind == "effect_started":
-            authorized = any(
-                prior.kind == "gate_decision"
-                and prior.invocation_id == event.invocation_id
-                and isinstance(prior, AuditEvent)
-                and prior.metadata.get("allowed") is True
-                for prior in earlier
-            )
-            if not authorized:
+        if not isinstance(event, AuditEvent):
+            checks.append("operational_audit_event_missing")
+            continue
+        invocation = event.invocation_id
+        if not invocation:
+            checks.append("invocation_id_missing")
+            continue
+        if not isinstance(event.metadata.get("tool"), str) or not event.metadata["tool"]:
+            checks.append("effect_tool_missing")
+        if event.kind == "gate_decision":
+            if invocation in gates:
+                checks.append("duplicate_gate_decision")
+            gates[invocation] = event
+        elif event.kind == "effect_started":
+            gate = gates.get(invocation)
+            if gate is None or gate.metadata.get("allowed") is not True:
                 checks.append("effect_without_prior_authorization")
-        elif not any(
-            prior.kind == "effect_started" and prior.invocation_id == event.invocation_id
-            for prior in earlier
+            elif _event_identity(gate) != _event_identity(event):
+                checks.append("effect_identity_mismatch")
+            if invocation in starts:
+                checks.append("duplicate_effect_start")
+            starts[invocation] = event
+        else:
+            start = starts.get(invocation)
+            if start is None:
+                checks.append("effect_completion_without_start")
+            elif _event_identity(start) != _event_identity(event):
+                checks.append("effect_identity_mismatch")
+            if invocation in completions:
+                checks.append("duplicate_effect_completion")
+            completions[invocation] = event
+            if (
+                event.kind == "effect_committed"
+                and type(event.metadata.get("output_valid")) is not bool
+            ):
+                checks.append("effect_output_validity_missing")
+
+    outcome_ids: set[str] = set()
+    for effect in result.effects:
+        invocation = effect.invocation_id
+        if invocation in outcome_ids:
+            checks.append("duplicate_effect_outcome")
+        outcome_ids.add(invocation)
+        start = starts.get(invocation)
+        if start is None:
+            checks.append("effect_outcome_without_start")
+            continue
+        if (effect.run_id, effect.step_id, effect.tool) != (
+            start.run_id,
+            start.step_id,
+            start.metadata.get("tool"),
         ):
-            checks.append("effect_completion_without_start")
-    return checks
+            checks.append("effect_outcome_identity_mismatch")
+        completion = completions.get(invocation)
+        committed = completion is not None and completion.kind == "effect_committed"
+        expected_status = "completed" if committed else "uncertain"
+        expected_validity = (
+            completion.metadata.get("output_valid")
+            if completion is not None and committed
+            else None
+        )
+        if effect.status != expected_status or effect.output_valid is not expected_validity:
+            checks.append("effect_outcome_mismatch")
+        if completion is None and result.status != "audit_failed":
+            checks.append("effect_completion_missing")
+    if starts.keys() - outcome_ids:
+        checks.append("effect_outcome_missing")
+
+    terminal_kinds: dict[str, set[str]] = {
+        "succeeded": {"run_committed"},
+        "blocked": {"run_blocked"},
+        "errored": {"run_errored", "plan_rejected"},
+        "aborted": {"run_aborted"},
+        "audit_failed": set(),
+    }
+    all_terminals = {kind for kinds in terminal_kinds.values() for kind in kinds}
+    root_terminals = [
+        event
+        for event in events
+        if event.run_id == result.trace.run_id and event.kind in all_terminals
+    ]
+    # A storage failure can prevent even the first event or terminal from being recorded.
+    if result.status == "audit_failed":
+        if root_terminals:
+            checks.append("unexpected_root_terminal")
+    elif (
+        len(root_terminals) != 1
+        or root_terminals[0].kind not in terminal_kinds[result.status]
+        or root_terminals[0] is not events[-1]
+        or root_terminals[0].parent_run_id is not None
+    ):
+        checks.append("root_terminal_mismatch")
+    return list(dict.fromkeys(checks))
 
 
 def _check(kind: ScenarioKind, observation: ConformanceObservation) -> list[str]:
     checks = _trace_checks(observation)
+    if (
+        kind
+        in {
+            ScenarioKind.INJECTED_EGRESS,
+            ScenarioKind.CAPABILITY_DENIED,
+            ScenarioKind.AUDIT_FAILURE_BEFORE_DISPATCH,
+        }
+        and observation.subsequent_effects
+    ):
+        checks.append("execution_continued_after_stop")
     if observation.unauthorized_effects:
         checks.append("unauthorized_external_effect")
 

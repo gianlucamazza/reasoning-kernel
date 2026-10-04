@@ -1,7 +1,7 @@
 set dotenv-load := true
 
-# everything CI runs, locally, in one command
-check: lint typecheck test docs-check
+# Complete offline quality gate for the current Python; CI adds the matrix and artifact round trip.
+check: lint typecheck test docs-check package-check
 
 # Build and validate the distribution, including an install outside the checkout.
 package-check:
