@@ -82,11 +82,11 @@ cp .env.example .env
 
 Keys are accepted under either their conventional bare name or an `RK_`-prefixed alias:
 
-| Provider  | Env var                                  | Default model (more capable variant)        |
-|-----------|------------------------------------------|---------------------------------------------|
-| Anthropic | `ANTHROPIC_API_KEY` / `RK_ANTHROPIC_API_KEY` | `claude-sonnet-5` (`claude-opus-4-8`) |
-| OpenAI    | `OPENAI_API_KEY` / `RK_OPENAI_API_KEY`       | `gpt-5.5` (`gpt-5.5-pro`)               |
-| DeepSeek  | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY`   | `deepseek-v4-flash` (`deepseek-v4-pro`) |
+| Provider | Env var | Default model (higher-capability option) |
+|----------|---------|-----------------------------------------|
+| Anthropic | `ANTHROPIC_API_KEY` / `RK_ANTHROPIC_API_KEY` | `claude-sonnet-5-5` (`claude-opus-5-5`) |
+| OpenAI | `OPENAI_API_KEY` / `RK_OPENAI_API_KEY` | `gpt-6.1-sol` (`gpt-6-astra`) |
+| DeepSeek | `DEEPSEEK_API_KEY` / `RK_DEEPSEEK_API_KEY` | `deepseek-flash` (`deepseek-v4-pro`) |
 
 Other overrides (defaults in `config.py`): `RK_LLM_PROVIDER_DEFAULT`, `RK_LLM_MODEL_*`,
 `RK_DEEPSEEK_BASE_URL`, `RK_LLM_TIMEOUT_SECONDS`, `RK_LLM_MAX_TOKENS`. With no selector, live tests
@@ -97,13 +97,20 @@ all other providers and require a configured key for every selected provider:
 RK_LIVE_PROVIDERS=deepseek,openai just test-live
 ```
 
-Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
-ids are current as of July 2026; the defaults are the cost-effective tier, the variants the
-frontier tier. For DeepSeek the legacy `deepseek-chat` / `deepseek-reasoner` names still resolve as
-deprecated aliases of `deepseek-v4-flash` but should not be used. DeepSeek uses the compatible
-JSON mode and validates the returned object against the requested Pydantic schema locally; OpenAI
-uses native JSON Schema structured output and falls back to the same validated JSON path only when
-the API explicitly rejects `response_format`.
+Model IDs were checked against the official catalogs on 2026-10-04:
+[OpenAI](https://developers.openai.com/api/docs/models/gpt-6.1-sol),
+[Anthropic](https://platform.claude.com/docs/en/models/overview), and
+[DeepSeek](https://api-docs.deepseek.com/quick_start/pricing). The defaults preserve the balanced
+or efficient tier. Model overrides remain explicit; the kernel never switches models after a failure.
+DeepSeek's `deepseek-flash` selects V4.1 Flash; the retired `deepseek-v4-flash` name is a provider-side
+compatibility alias and is no longer used by the kernel's defaults or live qualification cases.
+
+OpenAI GPT-6.1 Sol supports Chat Completions without tool calling. This matches the kernel's
+structured-output contract: the model emits data, and the kernel dispatches tools through its Gate.
+The adapter uses native JSON Schema output and falls back to locally validated JSON only when the
+API explicitly rejects `response_format`. DeepSeek uses the same locally validated JSON mode.
+The adapters omit reasoning-effort overrides, so provider defaults apply; output token limits also
+cover reasoning tokens. OpenAI and Anthropic higher-capability options need separate live qualification.
 
 `.env` is gitignored — never commit real keys.
 
@@ -122,11 +129,18 @@ changing code:
 
 ## OpenAI qualification
 
+The 0.6.3 candidate passed six live checks on 2026-10-04 using the current defaults: OpenAI
+`gpt-6.1-sol` (Plan plus operational Q-LLM) and DeepSeek `deepseek-flash` (Plan plus operational
+Q-LLM), with explicit Plan cases for `deepseek-flash` and `deepseek-v4-pro`. The SDK was
+OpenAI 3.19.2. Anthropic was excluded because no key was configured; none of the selected providers
+was skipped. These are contract checks with synthetic data and in-memory effects, not a quality or
+performance benchmark. GPT-6 Astra and Claude Opus 5.5 have not been live-qualified.
+
 The published 0.6.2 wheel passed the existing live Plan and operational Q-LLM tests on 2026-10-04
 using the configured `gpt-5.5` model and OpenAI SDK 3.19.2. Tests imported the public wheel in an
 isolated environment, with synthetic inputs and in-memory tool effects. This post-release evidence
 is attached separately to the GitHub Release; the original tag and distributions are unchanged.
-The qualification does not cover `gpt-5.5-pro` or Anthropic.
+This historical qualification does not cover the updated 0.6.3 defaults or Anthropic.
 
 Subsequent releases require `RK_LIVE_PROVIDERS=deepseek,openai` and explicitly pass both API secrets.
 Unavailable keys, credits, model access or provider responses fail the gate before publication.

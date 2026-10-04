@@ -70,9 +70,9 @@ def test_provider_returns_valid_plan(provider_name: str) -> None:
     assert plan.steps  # the model produced at least one step
 
 
-# Both current Deepseek models must round-trip through the same interface (the default and the
-# more capable variant). Legacy names (deepseek-chat/-reasoner) are deprecated aliases of v4-flash.
-_DEEPSEEK_MODELS = ["deepseek-v4-flash", "deepseek-v4-pro"]
+# Both current DeepSeek models must round-trip through the same interface (the default and the
+# more capable variant). Use the current Flash name, not the retired v4-flash compatibility alias.
+_DEEPSEEK_MODELS = ["deepseek-flash", "deepseek-v4-pro"]
 
 
 @pytest.mark.live
