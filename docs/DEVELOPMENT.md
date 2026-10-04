@@ -17,7 +17,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 
 | Command            | What it does                                                              |
 |--------------------|--------------------------------------------------------------------------|
-| `just check`       | `lint` + `typecheck` + `test` — everything CI runs, in one command        |
+| `just check`       | `lint` + `typecheck` + `test` + `docs-check` + `package-check` (current Python)        |
 | `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
 | `just conformance` | Complete key-free `operational-v1` reference profile                    |
 | `just docs-check`  | Local links, anchors, release metadata and claim-drift guard             |
@@ -47,8 +47,10 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 - **pre-commit**: hooks run ruff (+ format), the standard hygiene checks, and `pyright` strict on
   `schemas` + `kernel` + `memory`. Install once with `uv run pre-commit install`.
 
-CI (`.github/workflows/ci.yml`) runs the offline documentation contract once, then lint, typecheck,
-and the covered test suite on a Python 3.12 + 3.13 + 3.14 matrix on push / PR and on release tags.
+CI (`.github/workflows/ci.yml`) runs `just check` on a Python 3.12 + 3.13 + 3.14 matrix on push / PR
+and on release tags, plus a separate documentation check and artifact upload/download checksum round
+trip. Locally, `just check` covers the current Python only; it does not claim matrix or live-provider
+qualification.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
 manually and when a release calls the reusable workflow with required providers. The release
 workflow requires DeepSeek before package build or publication. Release notes live in

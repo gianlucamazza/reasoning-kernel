@@ -21,7 +21,7 @@ boundaries by construction.
 
 ## Commands
 ```bash
-just check       # lint + typecheck + test (everything CI runs)
+just check       # lint + types + tests + docs + package (current Python)
 just lint        # ruff
 just fix         # ruff --fix
 just typecheck   # pyright

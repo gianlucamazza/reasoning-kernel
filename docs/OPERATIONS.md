@@ -140,7 +140,8 @@ file and is not tamper-evident storage.
 - Review normalization-sensitive policies, output model contracts and application retry logic.
 - `LLMResult`, `LLMUsage`, `ToolExecutionError` and session/sink types are exported at the package root.
 
-`just check` verifies lint, typing and coverage. `just package-check` checks wheel/sdist metadata and
+`just check` verifies lint, typing, coverage, documentation and packaging on the current Python.
+Its `package-check` dependency checks wheel/sdist metadata and
 installs the wheel outside the source tree to exercise public imports and the deterministic demo.
 CI covers Python 3.12–3.14. Release tags must match package metadata. The release's configured live
 providers must pass on the tagged commit before the package is built. It then builds once, records

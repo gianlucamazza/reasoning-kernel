@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-10-04
+
+Corrective release for host-conformance evidence validation. API signatures, report schema version 1,
+profile names and CLI exit codes are unchanged; contradictory observations now fail closed.
+
+### Fixed
+
+- Require patched AnyIO 4.14.2 or newer for provider/development installs and update its lock entry.
+- Reject subsequent effects after capability/egress denial or pre-dispatch audit failure.
+- Correlate reported outcomes with unique authorized starts and matching completions; reject missing,
+  duplicated or inconsistent evidence, including completed effects with an empty trace.
+- Require a matching root terminal while preserving partial evidence for audit failures and child runs.
+- Include packaging in `just check` and use the aggregate in CI, documenting the separate Python
+  matrix, artifact round trip and live-provider gates.
+
 ## [0.6.0] - 2026-09-06
 
 Stable executable host-conformance release. It promotes the candidate after reference, package,

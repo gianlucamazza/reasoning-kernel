@@ -97,3 +97,15 @@ In CI, install an exact package version, run the command above and retain `confo
 artifact only after the command exits successfully. Inspect `cases[].outcome` and `cases[].checks`:
 `fail` means observed evidence violated a fixed expectation, while `inconclusive` means the scenario
 could not produce trustworthy evidence. Neither is a pass and there is no permissive CLI override.
+
+### Evidence consistency (0.6.1)
+
+Operational reports reject effects observed after a denial or pre-dispatch audit failure. Each
+reported effect must match a unique authorized start and its completion, including run, step, tool,
+status and output validity. Missing or duplicate evidence fails the case rather than passing it.
+A root terminal must agree with the result and close the trace; child terminals are distinct.
+An `audit_failed` result may lack a completion or terminal because persistence itself failed;
+its recorded starts must still match its uncertain outcomes. Crash/reopen scenarios retain their
+separate discovery/no-replay contract. These checks do not authenticate host observations or prove
+that an external effect actually committed. Report schema version 1, profile names and CLI exit
+codes are unchanged; consumers must allow additional sanitized check identifiers.

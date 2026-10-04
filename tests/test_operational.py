@@ -44,6 +44,8 @@ from reasoning_kernel import (
     TrustedQuery,
     VerifierVerdict,
 )
+from reasoning_kernel.conformance import ConformanceObservation
+from reasoning_kernel.conformance.runner import _trace_checks
 from reasoning_kernel.kernel.runtime import ReasonerExecutor, RunBoundExceeded
 from reasoning_kernel.schemas.trace import AuditEvent, EffectStarted, RunBlocked, digest
 
@@ -183,6 +185,7 @@ def test_partial_effect_is_explicit_and_no_next_tool_runs(failure):
         return Input(text="secret-output")
 
     result = session(registry_for(tool), plan=plan_for(write_step("a"), write_step("b"))).run()
+    assert _trace_checks(ConformanceObservation(result=result)) == []
     assert result.status == "errored" and result.committed is None
     assert len(calls) == len(result.effects) == 1
     assert result.effects[0].status == ("uncertain" if failure == "raises" else "completed")
@@ -285,6 +288,7 @@ def test_audit_failure_stops_at_correct_boundary(kind, expected_calls, expected_
         sink=sink,
         plan=plan_for(write_step("a"), write_step("b")),
     ).run()
+    assert _trace_checks(ConformanceObservation(result=result)) == []
     assert result.status == "audit_failed"
     assert len(calls) == expected_calls and len(result.effects) == expected_effects
     assert all(e.status == "uncertain" for e in result.effects)
@@ -325,7 +329,10 @@ def test_timeout_requires_finite_positive_value(timeout):
         RunLimits(reasoner_timeout_s=timeout)
 
 
-def test_sibling_subkernels_share_effect_budget():
+@pytest.mark.parametrize(
+    "max_effects,expected_status,expected_calls", [(1, "aborted", 1), (2, "succeeded", 2)]
+)
+def test_sibling_subkernels_share_effect_budget(max_effects, expected_status, expected_calls):
     calls = []
     outer = plan_for(
         ConstStep(id=StepId("source"), value="blob"),
@@ -344,10 +351,11 @@ def test_sibling_subkernels_share_effect_budget():
     result = session(
         registry_for(lambda _: calls.append(True) or Output()),
         provider=provider,
-        limits=RunLimits(max_effects=1),
+        limits=RunLimits(max_effects=max_effects),
     ).run()
-    assert result.status == "aborted" and len(calls) == 1
-    assert len(result.effects) == 1
+    assert _trace_checks(ConformanceObservation(result=result)) == []
+    assert result.status == expected_status and len(calls) == expected_calls
+    assert len(result.effects) == expected_calls
     children = [e for e in result.trace.events if e.parent_run_id]
     assert children and all(e.parent_run_id == "test" for e in children)
 

@@ -22,7 +22,7 @@
   "@type": "SoftwareSourceCode",
   "name": "Reasoning Kernel",
   "description": "A framework-agnostic Python reference implementation that puts a deterministic authorization boundary between untrusted LLM output and real effects.",
-  "softwareVersion": "0.6.0",
+  "softwareVersion": "0.6.1",
   "runtimePlatform": "Python 3.12 or newer",
   "codeRepository": "https://github.com/gianlucamazza/reasoning-kernel",
   "url": "https://gianlucamazza.github.io/reasoning-kernel/",
@@ -290,7 +290,7 @@
 
 <header class="hero" id="top">
   <div class="wrap">
-    <p class="eyebrow">Version 0.6.0</p>
+    <p class="eyebrow">Version 0.6.1</p>
     <h1>Put a deterministic Gate between model output and real effects</h1>
     <p class="tag">Untrusted model output cannot bypass authorization — by construction, not by prompt detection.</p>
     <p class="sub">A small, framework-agnostic Python reference implementation of the Reasoning Kernel pattern in its strong, CaMeL-like form. Every LLM is treated as untrusted compute, mediated by context on input and verification on output.</p>
@@ -307,7 +307,7 @@
     <div class="cta">
       <div class="install">
         <span class="dollar">$</span>
-        <span id="install-cmd">pip install capability-reasoning-kernel==0.6.0</span>
+        <span id="install-cmd">pip install capability-reasoning-kernel==0.6.1</span>
         <button id="copy-btn" type="button" aria-label="Copy install command">Copy</button>
       </div>
       <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub →</a>
@@ -637,7 +637,7 @@ provider = FakeProvider({<span class="kw">"Plan"</span>: benign_plan(ctx.run_id)
       <div class="kind"><span class="name">gate-v1</span><p>Four allow/deny scenarios for a real pre-pipeline checkpoint in enforcement mode.</p></div>
       <div class="kind"><span class="name">operational-v1</span><p>Nine effect, failure, audit and recovery scenarios for the operational runtime.</p></div>
     </div>
-    <pre class="code">pip install capability-reasoning-kernel==0.6.0
+    <pre class="code">pip install capability-reasoning-kernel==0.6.1
 reasoning-kernel-conformance my_agent.conformance:build_suite --output conformance.json</pre>
     <div class="cta">
       <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel/blob/main/docs/OPERATIONS.md">Operational guide</a>
@@ -688,12 +688,12 @@ reasoning-kernel-conformance my_agent.conformance:build_suite --output conforman
     <div class="cta">
       <div class="install">
         <span class="dollar">$</span>
-        <span id="install-cmd-2">pip install capability-reasoning-kernel==0.6.0</span>
+        <span id="install-cmd-2">pip install capability-reasoning-kernel==0.6.1</span>
         <button id="copy-btn-2" type="button" aria-label="Copy install command">Copy</button>
       </div>
       <a class="btn primary" href="https://github.com/gianlucamazza/reasoning-kernel">GitHub →</a>
       <a class="btn" href="https://pypi.org/project/capability-reasoning-kernel/">PyPI</a>
-      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.0">v0.6.0 release</a>
+      <a class="btn" href="https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.1">v0.6.1 release</a>
     </div>
   </div>
 </section>
