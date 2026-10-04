@@ -9,7 +9,7 @@ on:
       live_providers:
         description: Comma-separated providers required by the live gate
         required: true
-        default: deepseek
+        default: deepseek,openai
         type: string
   workflow_call:
     inputs:
@@ -178,4 +178,38 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: just test-live
+        run: |
+          just test-live --junitxml=live-tests.xml
+          uv run python - <<'PYCODE'
+          import json
+          import os
+          import platform
+          from importlib.metadata import version
+          from pathlib import Path
+          from reasoning_kernel.reasoner.factory import default_model_for
+
+          providers = sorted({
+              name.strip()
+              for name in os.environ["RK_LIVE_PROVIDERS"].split(",")
+              if name.strip()
+          })
+          metadata = {
+              "commit": os.environ["GITHUB_SHA"],
+              "package_version": version("capability-reasoning-kernel"),
+              "python_version": platform.python_version(),
+              "requested_models": {name: default_model_for(name) for name in providers},
+              "sdk_versions": {name: version(name) for name in ("openai", "anthropic")},
+          }
+          Path("live-metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
+          PYCODE
+
+      # Default success condition: failed runs never upload captured provider errors.
+      - name: Upload successful live qualification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: live-qualification
+          path: |
+            live-tests.xml
+            live-metadata.json
+          if-no-files-found: error
+          retention-days: 90

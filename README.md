@@ -75,8 +75,11 @@ model.
 Reasoner providers: Anthropic, OpenAI, DeepSeek (OpenAI-compatible, reusing the `openai` SDK via a
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
 behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
-live contract (`just test-live`). The release workflow requires DeepSeek qualification; OpenAI
-and Anthropic remain independently contract-tested unless a release explicitly qualifies them live.
+live contract (`just test-live`). Future releases require both DeepSeek and OpenAI qualification.
+The published 0.6.2 wheel additionally passed OpenAI `gpt-5.5` qualification after release, using
+SDK 3.19.2; evidence is attached to the [0.6.2 release](https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.2).
+Anthropic remains contract-tested without live qualification. These checks do not qualify every
+model variant or replace host-adapter acceptance.
 
 ## No effect bypasses the Verifier — by construction
 

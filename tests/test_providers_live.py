@@ -170,11 +170,14 @@ def test_operational_session_with_live_quarantine_provider(provider_name: str, t
     assert sent[0].body not in serialized
 
 
-def test_selected_live_provider_requires_its_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setitem(globals(), "_SELECTED_PROVIDERS", frozenset({"deepseek"}))
-    monkeypatch.setitem(_PROVIDER_SECRETS, "deepseek", SecretStr(""))
-    with pytest.raises(pytest.fail.Exception, match="required deepseek key"):
-        _require_provider("deepseek")
+@pytest.mark.parametrize("provider_name", ["openai", "deepseek"])
+def test_selected_live_provider_requires_its_key(
+    monkeypatch: pytest.MonkeyPatch, provider_name: str
+) -> None:
+    monkeypatch.setitem(globals(), "_SELECTED_PROVIDERS", frozenset({"openai", "deepseek"}))
+    monkeypatch.setitem(_PROVIDER_SECRETS, provider_name, SecretStr(""))
+    with pytest.raises(pytest.fail.Exception, match=f"required {provider_name} key"):
+        _require_provider(provider_name)
 
 
 def test_unselected_live_provider_is_explicitly_skipped(monkeypatch: pytest.MonkeyPatch) -> None:

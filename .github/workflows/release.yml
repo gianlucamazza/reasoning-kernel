@@ -16,9 +16,10 @@ jobs:
   quality:
     uses: ./.github/workflows/ci.yml
     with:
-      live_providers: deepseek
+      live_providers: deepseek,openai
     secrets:
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   build:
     needs: quality
