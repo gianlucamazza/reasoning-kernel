@@ -31,9 +31,9 @@ class Settings(BaseSettings):
     # "anthropic" | "openai" | "deepseek" — "fake" is test-only: constructed and injected
     # directly (it needs a script), never resolved through the factory.
     llm_provider_default: str = "anthropic"
-    llm_model_anthropic: str = "claude-sonnet-5"  # more capable: "claude-opus-4-8"
-    llm_model_openai: str = "gpt-5.5"  # more capable: "gpt-5.5-pro"
-    llm_model_deepseek: str = "deepseek-v4-flash"  # more capable: "deepseek-v4-pro"
+    llm_model_anthropic: str = "claude-sonnet-5-5"  # more capable: "claude-opus-5-5"
+    llm_model_openai: str = "gpt-6.1-sol"  # more capable: "gpt-6-astra"
+    llm_model_deepseek: str = "deepseek-flash"  # more capable: "deepseek-v4-pro"
     deepseek_base_url: str = "https://api.deepseek.com"
 
     llm_timeout_seconds: float = 120.0
