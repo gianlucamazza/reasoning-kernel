@@ -44,8 +44,8 @@ test *args:
     uv run pytest --cov --cov-report=term-missing {{ args }}
 
 # run the live tests that hit real provider APIs (needs API keys)
-test-live:
-    uv run pytest -m live
+test-live *args:
+    uv run pytest -m live {{ args }}
 
 # run the worked demo with the deterministic FakeProvider (no keys needed)
 demo:

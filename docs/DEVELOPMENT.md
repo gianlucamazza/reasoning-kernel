@@ -57,7 +57,7 @@ release publication. It exports `uv.lock` to a temporary standard pylock file an
 pip-audit without installing dependencies, ignoring advisories or applying automatic fixes.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
 manually and when a release calls the reusable workflow with required providers. The release
-workflow requires DeepSeek before package build or publication. Release notes live in
+workflow now requires both DeepSeek and OpenAI before package build or publication. Release notes live in
 [`CHANGELOG.md`](../CHANGELOG.md);
 security reporting and scope in [`SECURITY.md`](../SECURITY.md).
 
@@ -94,7 +94,7 @@ skip providers whose keys are absent. Set `RK_LIVE_PROVIDERS` to a comma-separat
 all other providers and require a configured key for every selected provider:
 
 ```bash
-RK_LIVE_PROVIDERS=deepseek just test-live
+RK_LIVE_PROVIDERS=deepseek,openai just test-live
 ```
 
 Each provider has a sensible default and a more capable variant (the parenthesised id above). Model
@@ -119,3 +119,17 @@ changing code:
    relaxes taint must go through the single, auditable `DeclassPolicy` seam — and that seam is
    *required* to be deterministic, a discipline the `Protocol` documents but the type system does not
    enforce.
+
+## OpenAI qualification
+
+The published 0.6.2 wheel passed the existing live Plan and operational Q-LLM tests on 2026-10-04
+using the configured `gpt-5.5` model and OpenAI SDK 3.19.2. Tests imported the public wheel in an
+isolated environment, with synthetic inputs and in-memory tool effects. This post-release evidence
+is attached separately to the GitHub Release; the original tag and distributions are unchanged.
+The qualification does not cover `gpt-5.5-pro` or Anthropic.
+
+Subsequent releases require `RK_LIVE_PROVIDERS=deepseek,openai` and explicitly pass both API secrets.
+Unavailable keys, credits, model access or provider responses fail the gate before publication.
+Successful live CI runs retain `live-qualification` artifacts (JUnit and version/model metadata)
+for 90 days. Failure logs are not uploaded as qualification artifacts. The metadata records the
+requested default models; parametrized DeepSeek model cases are identified in JUnit.

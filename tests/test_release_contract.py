@@ -73,7 +73,7 @@ def test_published_check_rejects_duplicate_distribution_type(tmp_path, suffix):
         expected_artifacts(tmp_path)
 
 
-def test_workflows_pin_uv_and_release_requires_deepseek_live():
+def test_workflows_pin_uv_and_release_requires_qualified_providers():
     root = Path(__file__).parent.parent
     workflows = [root / ".github/workflows/ci.yml", root / ".github/workflows/release.yml"]
     combined = "\n".join(path.read_text() for path in workflows)
@@ -87,6 +87,7 @@ def test_workflows_pin_uv_and_release_requires_deepseek_live():
     assert combined.count("uv build --clear") == 2
     assert "uv build --clear" in (root / "justfile").read_text()
     release = workflows[1].read_text()
-    assert "live_providers: deepseek" in release
+    assert "live_providers: deepseek,openai\n" in release
+    assert "OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}" in release
     assert "DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}" in release
     assert "secrets: inherit" not in release
