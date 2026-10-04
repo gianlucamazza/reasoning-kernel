@@ -11,6 +11,7 @@ profile names and CLI exit codes are unchanged; contradictory observations now f
 
 ### Fixed
 
+- Require patched AnyIO 4.14.2 or newer for provider/development installs and update its lock entry.
 - Reject subsequent effects after capability/egress denial or pre-dispatch audit failure.
 - Correlate reported outcomes with unique authorized starts and matching completions; reject missing,
   duplicated or inconsistent evidence, including completed effects with an empty trace.

@@ -36,6 +36,7 @@ def test_provider_sdk_ranges_exclude_untested_majors():
     provider_dependencies = {
         "anthropic>=0.40,<2",
         "openai>=1.50,<4",
+        "anyio>=4.14.2",
     }
     assert set(project["optional-dependencies"]["providers"]) == provider_dependencies
     dev_dependencies = set(project["optional-dependencies"]["dev"])
