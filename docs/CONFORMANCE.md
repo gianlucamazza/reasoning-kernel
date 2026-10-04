@@ -98,7 +98,7 @@ artifact only after the command exits successfully. Inspect `cases[].outcome` an
 `fail` means observed evidence violated a fixed expectation, while `inconclusive` means the scenario
 could not produce trustworthy evidence. Neither is a pass and there is no permissive CLI override.
 
-### Evidence consistency (0.6.1)
+### Evidence consistency (0.6.2)
 
 Operational reports reject effects observed after a denial or pre-dispatch audit failure. Each
 reported effect must match a unique authorized start and its completion, including run, step, tool,

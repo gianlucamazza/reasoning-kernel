@@ -22,6 +22,7 @@ boundaries by construction.
 ## Commands
 ```bash
 just check       # lint + types + tests + docs + package (current Python)
+just release-check # check + online locked-dependency audit
 just lint        # ruff
 just fix         # ruff --fix
 just typecheck   # pyright

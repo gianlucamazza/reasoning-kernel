@@ -18,6 +18,8 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 | Command            | What it does                                                              |
 |--------------------|--------------------------------------------------------------------------|
 | `just check`       | `lint` + `typecheck` + `test` + `docs-check` + `package-check` (current Python)        |
+| `just release-check` | Offline aggregate plus the online dependency security gate |
+| `just audit-deps` | Audit every locked extra/platform against known vulnerabilities |
 | `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
 | `just conformance` | Complete key-free `operational-v1` reference profile                    |
 | `just docs-check`  | Local links, anchors, release metadata and claim-drift guard             |
@@ -50,7 +52,9 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 CI (`.github/workflows/ci.yml`) runs `just check` on a Python 3.12 + 3.13 + 3.14 matrix on push / PR
 and on release tags, plus a separate documentation check and artifact upload/download checksum round
 trip. Locally, `just check` covers the current Python only; it does not claim matrix or live-provider
-qualification.
+qualification. `just release-check` adds the same online dependency audit required by CI and
+release publication. It exports `uv.lock` to a temporary standard pylock file and uses pinned
+pip-audit without installing dependencies, ignoring advisories or applying automatic fixes.
 `just package-check` validates wheel/sdist metadata and an isolated wheel install. The live job runs
 manually and when a release calls the reusable workflow with required providers. The release
 workflow requires DeepSeek before package build or publication. Release notes live in
