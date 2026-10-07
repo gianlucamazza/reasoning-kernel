@@ -34,3 +34,5 @@ uv sync          # install/refresh env (--all-extras for providers + dev tools)
 ## Conventions
 - It's a reference impl + spec, not a turn-key product — favor clarity and conformance over features.
 - Changes touching invariants A/B must preserve the topology; update `docs/` and the README spec.
+- The working paper lives in `docs/whitepaper/` (Markdown + PDF snapshot). No Zenodo DOI until
+  one is assigned; do not invent one or reuse emotional-memory records.

@@ -13,7 +13,8 @@
 [Quick start](#quick-start) ·
 [Embedding](#embedding-the-kernel) ·
 [Conformance](#executable-host-conformance) ·
-[Operations](docs/OPERATIONS.md)
+[Operations](docs/OPERATIONS.md) ·
+[Working paper](docs/whitepaper/reasoning-kernel-whitepaper.md)
 
 **The problem.** An LLM agent that reads untrusted data — an email, a web page, a tool result — can
 be hijacked by instructions hidden in that data and then act on them: leak your contacts, send mail,
@@ -31,6 +32,14 @@ prompt detection.
 **Who this is for.** If you're building an LLM agent that takes actions on untrusted input, this is
 a tested reference implementation and spec: read it to understand the pattern, fork it, or conform
 your own system to it. It is **not** a turn-key security product or an independent security audit.
+
+The topology, threat model, and honest limits are written up as a working paper (technical note):
+[Reasoning Kernel: A Capability-Mediated Reference Architecture for Untrusted Tool Data in LLM
+Agents](docs/whitepaper/reasoning-kernel-whitepaper.md)
+([PDF](docs/whitepaper/reasoning-kernel-whitepaper.pdf)). MIT; no peer-review or safety-certificate
+claim. **No Zenodo DOI is assigned** — deposit is on hold. Do not conflate this note with the
+separate emotional-memory Zenodo records. Cite CaMeL as
+[arXiv:2503.18813](https://arxiv.org/abs/2503.18813).
 
 ## The two invariants
 
@@ -355,6 +364,19 @@ result = kernel.run(ctx)  # committed is None if the run failed closed
 CaMeL — Debenedetti et al., *Defeating Prompt Injections by Design*, 2025
 ([arXiv:2503.18813](https://arxiv.org/abs/2503.18813)). Section references (e.g. §5.4, §6.2)
 point to it.
+
+## Citation
+
+Until a Zenodo DOI is assigned for the working paper (deposit is on hold pending Owner
+instructions), cite the software by URL and version:
+
+> Mazza, G. (2026). *reasoning-kernel* (Version 0.6.3) [Computer software].
+> https://github.com/gianlucamazza/reasoning-kernel
+
+See the [working paper](docs/whitepaper/reasoning-kernel-whitepaper.md) for the technical note and
+related-work citations, including CaMeL
+([arXiv:2503.18813](https://arxiv.org/abs/2503.18813)). Do not cite emotional-memory Zenodo records
+as Reasoning Kernel identifiers.
 
 ## License
 

@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- In-repository working paper (technical note) under [`docs/whitepaper/`](docs/whitepaper/):
+  Markdown source, typeset PDF snapshot, and draft Zenodo metadata. No DOI is claimed; deposit
+  remains on hold pending Owner instructions.
+
 ## [0.6.3] - 2026-10-04
 
 ### Changed
