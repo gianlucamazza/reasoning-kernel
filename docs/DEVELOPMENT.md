@@ -67,7 +67,9 @@ configuration; it never calls a live provider on its own.
 
 The pyright configuration selects `.venv` explicitly, avoiding accidental system-Python imports.
 Operational contracts and migration are in [OPERATIONS.md](OPERATIONS.md); the integration
-acceptance checklist is in [CONFORMANCE.md](CONFORMANCE.md). Provider refusal/truncation handling
+acceptance checklist is in [CONFORMANCE.md](CONFORMANCE.md). The capability-mediated topology
+and threat model are described in the [working paper](whitepaper/reasoning-kernel-whitepaper.md)
+(PDF snapshot alongside; Zenodo deposit on hold, no DOI). Provider refusal/truncation handling
 follows the [official structured-output contract](https://developers.openai.com/api/docs/guides/structured-outputs)
 and is exercised with SDK-shaped fixtures without API calls.
 

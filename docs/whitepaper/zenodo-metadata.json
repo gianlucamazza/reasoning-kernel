@@ -1,0 +1,77 @@
+{
+  "deposit_status": "ON HOLD — Owner will give separate instructions later. Do not upload. Do not invent or claim a DOI.",
+  "$schema_note": "Draft Zenodo deposit metadata for a future manual upload. Do NOT invent a DOI. No access_token. Values match public GitHub/PyPI/site facts as of 2026-10-07 (Europe/Rome).",
+  "metadata": {
+    "title": "Reasoning Kernel: A Capability-Mediated Reference Architecture for Untrusted Tool Data in LLM Agents",
+    "upload_type": "publication",
+    "publication_type": "technicalnote",
+    "description": "<p>Working paper / technical note describing <strong>Reasoning Kernel</strong>, a Python reference implementation of a strong, CaMeL-like architecture for LLM agents: every model is treated as untrusted compute; planner inputs are mediated; no model output becomes a durable effect except through a deterministic Gate with capability and provenance checks.</p><p>Scope is honest: topology and reference software (PyPI <code>capability-reasoning-kernel</code>), not a security product, peer-reviewed evaluation, or safety certificate. Host policy remains the residual risk surface. Companion essay: <a href=\"https://gianlucamazza.it/en/blog/reasoning-kernel-untrusted-data\">Untrusted Data Must Not Own Control Flow</a> (2026-10-02). Software: <a href=\"https://github.com/gianlucamazza/reasoning-kernel\">gianlucamazza/reasoning-kernel</a>.</p><p><em>Italian abstract (short):</em> Implementazione di riferimento in Python di un reasoning kernel a capability (forma forte, affine a CaMeL) che separa testo non fidato ed effetti autorizzati. È una topologia, non una certificazione.</p><p><strong>No DOI is claimed in the uploaded PDF until Zenodo assigns one.</strong> Do not conflate with emotional-memory Zenodo records.</p>",
+    "creators": [
+      {
+        "name": "Mazza, Gianluca",
+        "affiliation": "Independent practice — gianlucamazza.it",
+        "orcid": ""
+      }
+    ],
+    "keywords": [
+      "reasoning kernel",
+      "capability-based security",
+      "prompt injection",
+      "LLM agents",
+      "taint tracking",
+      "untrusted data",
+      "CaMeL",
+      "reference implementation"
+    ],
+    "license": "mit-license",
+    "language": "eng",
+    "version": "0.1.0-draft",
+    "notes": "License matches the software repository (MIT). Prefer Zenodo license id 'mit-license'. If the UI requires a SPDX label, use MIT. Optional Italian abstract is embedded in the description. ORCID blank — Owner should fill if desired before publish. publication_type alternative: workingpaper if technicalnote is unavailable in UI.",
+    "related_identifiers": [
+      {
+        "identifier": "https://gianlucamazza.it/en/blog/reasoning-kernel-untrusted-data",
+        "relation": "isSupplementTo",
+        "resource_type": "publication-article",
+        "scheme": "url"
+      },
+      {
+        "identifier": "https://github.com/gianlucamazza/reasoning-kernel",
+        "relation": "isSupplementTo",
+        "resource_type": "software",
+        "scheme": "url"
+      },
+      {
+        "identifier": "https://pypi.org/project/capability-reasoning-kernel/",
+        "relation": "isSupplementTo",
+        "resource_type": "software",
+        "scheme": "url"
+      },
+      {
+        "identifier": "10.48550/arXiv.2503.18813",
+        "relation": "cites",
+        "resource_type": "publication-preprint",
+        "scheme": "doi"
+      },
+      {
+        "identifier": "https://gianlucamazza.it/en/research",
+        "relation": "isDocumentedBy",
+        "resource_type": "other",
+        "scheme": "url"
+      }
+    ],
+    "communities": [],
+    "access_right": "open"
+  },
+  "files_to_upload": [
+    "reasoning-kernel-whitepaper.pdf",
+    "reasoning-kernel-whitepaper.md"
+  ],
+  "do_not_include": [
+    "emotional-memory concept DOI 10.5281/zenodo.19972258",
+    "emotional-memory version DOI 10.5281/zenodo.22724258",
+    "any invented 10.5281/zenodo.* for Reasoning Kernel"
+  ],
+  "suggested_zenodo_community": "Leave empty unless Owner already belongs to a community (e.g. personal or open-source security). No community is required for open deposit.",
+  "suggested_prereserve_doi": true,
+  "publication_type_fallback": "workingpaper"
+}
