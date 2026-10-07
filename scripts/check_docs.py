@@ -18,9 +18,7 @@ WHITEPAPER_MD = ROOT / "docs/whitepaper/reasoning-kernel-whitepaper.md"
 WHITEPAPER_PDF = ROOT / "docs/whitepaper/reasoning-kernel-whitepaper.pdf"
 ZENODO_METADATA = ROOT / "docs/whitepaper/zenodo-metadata.json"
 # Emotional-memory records may appear only as excluded identifiers, never as this paper's DOI.
-EXCLUDED_ZENODO_DOIS = frozenset(
-    {"10.5281/zenodo.19972258", "10.5281/zenodo.22724258"}
-)
+EXCLUDED_ZENODO_DOIS = frozenset({"10.5281/zenodo.19972258", "10.5281/zenodo.22724258"})
 
 
 class _LandingParser(HTMLParser):
