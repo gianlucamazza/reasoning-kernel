@@ -50,8 +50,8 @@ profile and must provide each of its `ScenarioKind` values exactly once.
 | Scenario | Required evidence |
 |---|---|
 | `benign_effect` | An authorized effect succeeds and is externally observable |
-| `injected_control` | The run succeeds, an authorized effect is observed, and the trusted observer reports no unauthorized effect |
-| `injected_egress` | An attempted tainted exfiltration is blocked with no unauthorized effect |
+| `injected_control` | The run succeeds, an authorized effect is observed, and the trusted observer reports no unauthorized effect. Fixture under the host policy — not a general injection-impossibility claim. |
+| `injected_egress` | An attempted tainted exfiltration is blocked with no unauthorized effect. Same fixture caveat: the observer, not the runner, classifies destinations. |
 | `capability_denied` | Missing authority blocks the WRITE before its callable |
 | `invalid_output` | Invalid adapter output is recorded and later effects do not run |
 | `tool_failure_before_effect` | The outcome is uncertain, no effect is observed and execution stops |

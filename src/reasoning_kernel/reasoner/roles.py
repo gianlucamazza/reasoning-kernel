@@ -4,7 +4,7 @@
   emits a typed ``Plan``. It is privileged in that its plan drives tool use — but it is still
   untrusted: its plan is checked by the deterministic gate before anything commits.
 - ``QLLM`` (Quarantined parser): processes untrusted blobs into typed values. It has NO tool
-  access by construction — its only output type is a data schema, never a ``Plan`` or a step.
+  access: its only output type is a data schema, never a ``Plan`` or a step.
 
 Per §5.4 the kernel contains no trusted reasoner: both are userspace.
 """

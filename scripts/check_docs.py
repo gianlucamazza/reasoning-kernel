@@ -90,16 +90,28 @@ def documentation_errors() -> list[str]:
     stale_claims = {
         "can cannot": readme,
         "structurally harmless": landing,
+        "structurally unable": readme + landing,
+        "cannot bypass authorization": readme + landing,
+        "cannot bypass deterministic authorization": readme + landing,
+        "True by construction": landing,
+        "The pattern guarantees": readme + landing,
+        "Honest limits": readme + landing,
         "The model never reads raw reality": landing,
         "There is no facade": landing,
         "A fixed operational profile": landing,
         "vetted skeleton": readme + landing,
+        "provably": readme + landing,
+        "blocking proofs": readme + landing,
     }
     errors.extend(
         f"stale documentation claim: {claim}"
         for claim, text in stale_claims.items()
         if claim in text
     )
+    if "Threat model & limits" not in readme:
+        errors.append("README missing Threat model & limits section")
+    if "Threat model" not in landing:
+        errors.append("landing missing Threat model section")
     if operations.startswith("# Operational embedding and migration (0.5)"):
         errors.append("operations guide still identifies itself as 0.5")
 
