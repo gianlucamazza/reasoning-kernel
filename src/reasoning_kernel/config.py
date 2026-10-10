@@ -1,6 +1,6 @@
 """Single source of truth for configuration and secrets (loaded from env / .env).
 
-Mirrors limolane's `config.settings` convention: every module imports `settings`
+Mirrors a downstream client's `config.settings` convention: every module imports `settings`
 from here instead of reading `os.environ` or duplicating defaults. Secrets are
 `SecretStr`. Env vars are prefixed `RK_` (e.g. `RK_LLM_PROVIDER_DEFAULT`); provider
 keys keep their conventional bare names (`ANTHROPIC_API_KEY`, ...) for familiarity.

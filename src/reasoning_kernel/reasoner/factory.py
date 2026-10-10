@@ -1,4 +1,4 @@
-"""Provider selection. Mirrors limolane's ``infra/llm/factory.py`` (+ deepseek).
+"""Provider selection. Mirrors a downstream client's ``infra/llm/factory.py`` (+ deepseek).
 
 The ``fake`` provider is constructed and injected directly in tests, not built here — it needs
 a script — so the factory only resolves the real providers.

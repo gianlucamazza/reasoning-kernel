@@ -1,6 +1,6 @@
 """Anthropic-backed provider (structured outputs + ephemeral prompt cache).
 
-Mirrors limolane's ``infra/llm/anthropic.py``. Imported lazily so the package works without
+Mirrors a downstream client's ``infra/llm/anthropic.py``. Imported lazily so the package works without
 the ``anthropic`` SDK installed (the default test suite uses the FakeProvider).
 """
 
