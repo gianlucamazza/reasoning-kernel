@@ -168,7 +168,7 @@ pip install capability-reasoning-kernel
 Pin the exact release when producing conformance evidence:
 
 ```bash
-pip install capability-reasoning-kernel==0.6.3
+pip install capability-reasoning-kernel==0.6.4
 ```
 
 For operational embedding, use `RunSession` with a persistent sink and bounded defaults; see
