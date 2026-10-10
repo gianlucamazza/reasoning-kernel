@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Scope public claims to what the tree and tests support: CaMeL-style control/data-flow
+  separation **reduces** the injection-to-effect risk under stated assumptions. It is not a
+  proof that prompt injection is unable to cause an unauthorized effect. README, landing page,
+  package description, SECURITY, development notes, and the working-paper source now use that
+  wording, with an explicit **Threat model & limits** section (assumptions, test citations,
+  non-goals). Documentation and metadata only; no runtime behaviour change.
+
 ### Added
 
 - In-repository working paper (technical note) under [`docs/whitepaper/`](docs/whitepaper/):

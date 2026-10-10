@@ -11,8 +11,9 @@ Remote: `gianlucamazza/reasoning-kernel`.
 - **B** — the reasoner never commits reality: no model output becomes a durable effect except through
   the single deterministic gate (`src/reasoning_kernel/kernel/gate.py`).
 
-The pattern fixes a *topology*, not a policy guarantee — keep mediation/verification at those
-boundaries by construction.
+The pattern fixes a *topology*, not a policy property — keep mediation/verification at those
+boundaries. That wiring reduces injection-to-effect risk under stated assumptions; it is not
+a proof that injection cannot cause an unauthorized effect.
 
 ## Stack & layout
 - Python, `uv` (uv.lock), `pyproject.toml`, `just`. Lint Ruff, types pyright.

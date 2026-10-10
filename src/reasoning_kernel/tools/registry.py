@@ -1,9 +1,10 @@
-"""The tool registry — where the effect callables live, and nowhere else.
+"""The tool registry — where the registered effect callables live.
 
 A ``RegisteredTool`` binds a declared ``ToolSpec`` to its callable. The registry is the only
-holder of callables; it hands them solely to the ``EffectDispatcher``. The interpreter never
-receives the registry, so it has no reference path to a callable — half of the by-construction
-no-bypass guarantee (the other half is the dispatcher requiring a Gate).
+holder of those callables; it hands them solely to the ``EffectDispatcher``. The interpreter
+does not receive the registry, so it has no reference path to a callable — half of the
+no-bypass *wiring* (the other half is the dispatcher requiring a Gate). This does not sandbox
+a callable that exceeds its spec, and it does not cover callables the host keeps elsewhere.
 """
 
 from __future__ import annotations

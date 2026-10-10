@@ -2,12 +2,13 @@
 
 Technical note for the Reasoning Kernel **topology** (capability-mediated architecture;
 strong, CaMeL-like form). This is a reference-implementation write-up, not a peer-reviewed
-paper or a safety certificate.
+paper, a safety certificate, or a proof that prompt injection cannot cause an unauthorized
+effect. Claims are scoped in the README *Threat model & limits*.
 
 | Artifact | Role |
 | --- | --- |
 | [reasoning-kernel-whitepaper.md](reasoning-kernel-whitepaper.md) | Canonical source (Markdown) |
-| [reasoning-kernel-whitepaper.pdf](reasoning-kernel-whitepaper.pdf) | Typeset snapshot (2026-10-07) |
+| [reasoning-kernel-whitepaper.pdf](reasoning-kernel-whitepaper.pdf) | Typeset snapshot (2026-10-07; Markdown is canonical for later claim-scope edits) |
 | [zenodo-metadata.json](zenodo-metadata.json) | Draft deposit metadata only |
 
 **Status.** In-repository draft. MIT, matching the software. Software line:

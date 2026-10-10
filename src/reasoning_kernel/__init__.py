@@ -1,8 +1,10 @@
-"""Reasoning Kernel — a reference implementation of the Reasoning Kernel pattern (CaMeL-like form).
+"""Reasoning Kernel — a CaMeL-like reference: mediate model input, verify effects at a Gate.
 
-Treat every LLM as untrusted compute: control its input (assembled context, Invariant A) and verify
-its output (a deterministic Gate, Invariant B). This module re-exports the building blocks an
-integrator wires together — see the README's "Embedding the kernel" section and
+Treat every LLM as untrusted compute: assemble its input (Invariant A) and authorize durable
+effects through a deterministic Gate (Invariant B). That topology reduces injection-to-effect
+risk under the assumptions in the README's Threat model; it is not a proof that injection
+cannot cause an unauthorized effect. This module re-exports the building blocks an integrator
+wires together — see the README's "Embedding the kernel" section and
 ``reasoning_kernel.demo.email_exfil`` for a complete worked example.
 """
 

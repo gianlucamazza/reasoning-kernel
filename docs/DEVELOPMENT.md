@@ -20,7 +20,7 @@ Python 3.12+ is required. The default suite needs no API keys: it runs against t
 | `just check`       | `lint` + `typecheck` + `test` + `docs-check` + `package-check` (current Python)        |
 | `just release-check` | Offline aggregate plus the online dependency security gate |
 | `just audit-deps` | Audit every locked extra/platform against known vulnerabilities |
-| `just demo`        | Worked demo (FakeProvider): legit send commits; injection inert; exfil blocked |
+| `just demo`        | Worked demo fixture (FakeProvider + RecipientIsUserPolicy): legit send commits; injection inert under that policy |
 | `just conformance` | Complete key-free `operational-v1` reference profile                    |
 | `just docs-check`  | Local links, anchors, release metadata and claim-drift guard             |
 | `just demo-subkernel` | §5.4 composition demo: untrusted content delegated at a reduced grant  |
@@ -121,9 +121,10 @@ cover reasoning tokens. OpenAI and Anthropic higher-capability options need sepa
 See the role → module map in the [README](../README.md). The two rules to keep in mind when
 changing code:
 
-1. **No effect bypasses the Verifier.** Tool callables live only in `ToolRegistry`, handed only to
-   `EffectDispatcher`, which cannot be built without a `Gate` and checks it before every call. Do not
-   give the interpreter a path to a callable.
+1. **Registered effects go through the Verifier.** Tool callables live only in `ToolRegistry`,
+   handed only to `EffectDispatcher`, which cannot be built without a `Gate` and checks it before
+   every call. Do not give the interpreter a path to a callable. This is the no-bypass *wiring*,
+   not a proof that no unauthorized effect can occur.
 2. **The commit path stays deterministic.** No LLM-as-judge on verification (§6.2). Anything that
    relaxes taint must go through the single, auditable `DeclassPolicy` seam — and that seam is
    *required* to be deterministic, a discipline the `Protocol` documents but the type system does not

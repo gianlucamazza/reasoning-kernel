@@ -3,12 +3,13 @@
 ## Scope — read this first
 
 `reasoning-kernel` is a **reference implementation of an architecture pattern**, not a turn-key
-security product. It demonstrates how to prevent untrusted model output from bypassing deterministic
-authorization: the LLM is treated as untrusted compute, and every real-world effect passes a Gate.
-What the pattern guarantees is a **topology**; the *policy* you plug in defines authority and carries
-correctness.
+security product. CaMeL-style control/data-flow separation **reduces** the injection-to-effect
+risk when the assumptions in the README hold: the LLM is treated as untrusted compute, and every
+*registered* real-world effect passes a Gate. The pattern fixes a **topology**; the *policy* you
+plug in defines authority and carries correctness. It does not prove that prompt injection is
+unable to cause an unauthorized effect.
 
-In particular (see the "Honest limits" section of the [README](README.md)):
+In particular (see [Threat model & limits](README.md#threat-model--limits) in the README):
 
 - A pass-through declassifier conforms to the pattern yet protects nothing — **the declassifier is the
   residual risk surface**. Every `may_declassify=True` is a deliberate, traced trust decision.
@@ -28,11 +29,13 @@ permissive policy written on top of it.
   and can put arbitrary instructions in it.
 - **The attacker does NOT control host-supplied configuration**: the `TrustedQuery` and its label, the
   capability grants, the tool catalog, the Q-LLM schemas, and the `DeclassPolicy`. These are trusted by
-  assumption (see *the trust boundary is axiomatic* in the README's *Honest limits*).
+  assumption (see *Assumptions* in the README's *Threat model & limits*).
 - **Trusted computing base**: the deterministic interpreter + gate (`kernel/`), the schemas
   (`schemas/`), and the value store / trace (`memory/`). No LLM is in the TCB.
-- **Out of scope**: supply-chain compromise, side channels, denial of service beyond `RunLimits`, and a
-  compromised host. The reasoner is assumed possibly-malicious; the host config is assumed correct.
+- **Out of scope / non-goals**: supply-chain compromise, side channels, denial of service beyond
+  `RunLimits`, a compromised host, policy bugs, a planner that only uses *allowed* tools (including
+  data exfiltration via those tools), and formal impossibility proofs. The reasoner is assumed
+  possibly-malicious; the host config is assumed correct.
 
 ## Supported versions
 

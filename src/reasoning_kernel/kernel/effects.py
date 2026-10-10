@@ -1,13 +1,15 @@
-"""The effect dispatcher — the one and only place a real tool callable is invoked.
+"""The effect dispatcher — the one and only place a registered tool callable is invoked.
 
-This is where the no-bypass guarantee becomes structural rather than conventional:
+This is the no-bypass *wiring* for registered tools, not a proof that no unauthorized effect
+can occur:
 - it is the sole holder of the registry's callables;
-- it CANNOT be constructed without a ``Gate`` (the gate is a required constructor argument);
-- ``dispatch`` calls ``gate.authorize`` unconditionally and raises ``EffectBlocked`` *before* the
-  callable is ever reached.
+- it cannot be constructed without a ``Gate`` (the gate is a required constructor argument);
+- ``dispatch`` calls ``gate.authorize`` and raises ``EffectBlocked`` *before* the callable is
+  reached.
 
-So "no effect bypasses the Verifier" reduces to "the only effect site always checks first" —
-which is true by construction, and witnessed in every trace.
+So "registered effects go through the Verifier" reduces to "the only registered effect site
+checks first." Side channels, host-owned callables outside the registry, and tools that exceed
+their ``ToolSpec`` are out of scope. Witnessed in the dispatch trace when the Gate runs.
 """
 
 from __future__ import annotations

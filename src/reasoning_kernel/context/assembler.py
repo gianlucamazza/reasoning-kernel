@@ -2,8 +2,8 @@
 
 The planner context is built ONLY from the controlled user query plus the tool *catalog*
 (names, effect levels, schema names) — never from data and never from untrusted content. That
-is the whole point: the privileged planner cannot be steered by anything the system did not
-choose to show it. The quarantine context is the untrusted blob handed to the Q-LLM, which has
+is the whole point: the privileged planner is not shown anything the system did not choose
+to include. The quarantine context is the untrusted blob handed to the Q-LLM, which has
 no capabilities and can only return data.
 """
 

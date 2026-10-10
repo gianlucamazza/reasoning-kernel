@@ -32,11 +32,11 @@ keywords:
 
 Large language model (LLM) agents that read tool outputs, messages, or pages can be steered by instructions hidden in that data and then act—send mail, leak contacts, or call tools the user did not authorize. Detection inside the prompt is a hope, not a topology. This working paper describes **Reasoning Kernel**, a Python **reference implementation** of a strong, CaMeL-like architecture in which every model is treated as **untrusted compute**, model inputs are mediated, and no model output becomes a durable effect except through one deterministic verification boundary (the Gate).
 
-The paper states the problem of untrusted tool/data ownership of control flow; presents the two public invariants of the kernel; maps roles to modules; summarizes the threat model and honest limits; reports implementation and packaging status without inventing benchmarks or peer-review claims; and situates the work relative to CaMeL (Debenedetti et al., 2025) and related practice. The claim is architectural: a **topology**, not a safety certificate. Host policy remains the residual risk surface.
+The paper states the problem of untrusted tool/data ownership of control flow; presents the two public invariants of the kernel; maps roles to modules; summarizes the threat model and limits; reports implementation and packaging status without inventing benchmarks or peer-review claims; and situates the work relative to CaMeL (Debenedetti et al., 2025) and related practice. The claim is architectural: a **topology** that **reduces** injection-to-effect risk under stated assumptions, not a safety certificate or an impossibility proof. Host policy remains the residual risk surface.
 
 ## Abstract (Italiano, breve)
 
-Gli agenti basati su LLM che leggono output di tool, messaggi o pagine possono essere dirottati da istruzioni nascoste nei dati e poi agire. Questo working paper descrive **Reasoning Kernel**, un’**implementazione di riferimento** in Python di un’architettura a capability (forma forte, affine a CaMeL) in cui ogni modello è calcolo non fidato e nessun effetto durevole passa senza un Gate deterministico. È una **topologia**, non una certificazione di sicurezza; la policy resta responsabilità dell’host. Nessun DOI è dichiarato in questo documento.
+Gli agenti basati su LLM che leggono output di tool, messaggi o pagine possono essere dirottati da istruzioni nascoste nei dati e poi agire. Questo working paper descrive **Reasoning Kernel**, un’**implementazione di riferimento** in Python di un’architettura a capability (forma forte, affine a CaMeL) in cui ogni modello è calcolo non fidato e nessun effetto durevole *registrato* passa senza un Gate deterministico. È una **topologia** che riduce il rischio injection→effetto sotto ipotesi esplicite, non una certificazione né una prova di impossibilità; la policy resta responsabilità dell’host. Nessun DOI è dichiarato in questo documento.
 
 ---
 
@@ -55,10 +55,10 @@ This document exists so the research/software line has a citable working-paper a
 1. A concise statement of the **untrusted-data / control-flow** problem for tool-using agents.
 2. A description of the Reasoning Kernel **topology**: mediated inputs, dual untrusted reasoners, deterministic Gate, object-level provenance.
 3. An **architecture map** from public modules to roles (context, reasoners, conductor, verifier, tools, memory/trace).
-4. A **threat model and limits** section aligned with the project `SECURITY.md` and README “Honest limits.”
+4. A **threat model and limits** section aligned with the project `SECURITY.md` and README “Threat model & limits.”
 5. Pointers to **software, citation practice, and related work**, without fabricated performance numbers.
 
-Non-contributions: new formal proofs; AgentDojo replication numbers; claims of peer review; claims that conformance equals safety; any DOI for this paper until Zenodo assigns one.
+Non-contributions: new formal proofs; AgentDojo replication numbers; claims of peer review; claims that conformance equals safety; absolute claims that injection cannot cause an unauthorized effect; any DOI for this paper until Zenodo assigns one.
 
 ---
 
@@ -71,11 +71,11 @@ Two failure channels matter:
 - **Control-flow hijack.** Injected text changes *which* tools run or in what order.
 - **Data-flow hijack.** The plan skeleton is intact, but arguments (recipient, attachment, amount) are filled from attacker-influenced parses—analogous to parameter tampering rather than rewriting the program [Debenedetti2025Camel].
 
-Prompt-only defenses address neither channel with structural guarantees. The design goal adopted here is narrower and sharper:
+Prompt-only defenses address neither channel with inspectable architecture. The design *goal* adopted here is narrower and sharper (a goal, not a proved theorem):
 
 > Untrusted data must not own control flow. It must not cause an effect by itself.
 
-Effects (writes, sends, irreversible API calls) must require a path that the host can name: who assembled planner context, which Gate decision authorized the write, and what the declassifier explicitly allowed.
+Effects (writes, sends, irreversible API calls) must require a path that the host can name: who assembled planner context, which Gate decision authorized the write, and what the declassifier explicitly allowed. CaMeL-style control/data-flow separation **reduces** the injection-to-effect risk when those assumptions hold. It does not prove that injection cannot cause an unauthorized effect.
 
 ---
 
@@ -126,15 +126,15 @@ A plan is a forward-only DAG of five step kinds: `const`, `tool`, `q_parse`, `su
 | Tool catalog | `tools/registry.py` | Sole holder of tool callables |
 | Memory / Trace | `memory/` | Durability and audit format |
 
-### 4.2 Effect path (no bypass by construction)
+### 4.2 Effect path (registered tools go through the Verifier)
 
-Three construction rules encode Invariant B in the type and wiring story:
+Three construction rules encode Invariant B in the type and wiring story for *registered* tools. This is the no-bypass *wiring*, not a proof that no unauthorized effect can occur:
 
 1. Tool callables live only in `ToolRegistry`, handed only to `EffectDispatcher`. The interpreter never holds a callable.
 2. `EffectDispatcher` cannot be constructed without a `Gate`; `dispatch` authorizes before the callable runs.
 3. `ToolCallStep` is the only step kind that invokes a tool callable, and its only handler routes through the dispatcher. Other step kinds produce values; a sub-kernel may invoke tools only through its reduced Gate and the same dispatcher path.
 
-Structural tests in the repository (e.g. denied capability or provenance never firing the callable; committed effects preceded by allowed Gate decisions) are the project’s receipts for this wiring—not a substitute for host acceptance tests.
+Tests in the repository (e.g. denied capability or provenance never firing the callable; committed effects preceded by allowed Gate decisions) are the project’s receipts for this wiring—not a substitute for host acceptance tests, and not a coverage of side channels or tools that exceed their spec.
 
 ### 4.3 Gate checks and provenance
 
@@ -167,13 +167,15 @@ Hosts embed via `RunSession` (or low-level wiring) with persistent sinks and bou
 
 ### 5.3 Out of scope / non-goals (selected)
 
-Aligned with project security policy and README:
+Aligned with project security policy and README *Threat model & limits*:
 
 - Supply-chain compromise, side channels, DoS beyond `RunLimits`, compromised host.
-- Conformance as safety; allow-all declassifiers.
+- Conformance as safety; allow-all declassifiers; policy bugs.
+- A compromised planner *relative to what the policy already allows* (any permitted effect can still fire).
+- Data exfiltration via allowed tools (e.g. secrets inside an authorized summary mailed to the user).
 - Typed enforcement that `DeclassPolicy` never consults a model (determinism is required of the declassifier as discipline, not enforced by the type system).
 - Atomicity / rollback of already-committed effects.
-- Python sandboxing, non-interference proofs, or provider confidentiality (quarantine does not hide data from the model provider the host chose).
+- Python sandboxing, non-interference or impossibility proofs, or provider confidentiality (quarantine does not hide data from the model provider the host chose).
 - Text-to-text distortions with no unauthorized side effect (e.g. a wrong summary shown only to the user), except insofar as provenance can help UI disclosure—consistent with CaMeL’s stated non-goals for some text-only attacks [Debenedetti2025Camel].
 
 ### 5.4 Worked demo (fixture, not production mail)
@@ -185,7 +187,7 @@ The public `demo/email_exfil.py` (and its tests) exercises one agent shape under
 3. Malicious plan that mails contacts to an attacker is blocked (Invariant B).
 4. A stricter fixture: third-party contacts cannot be mailed even to the requesting user without explicit declassification.
 
-These scenarios are **fixtures**. They are not latency or success-rate claims, and not a production email system.
+These scenarios are **fixtures** under `RecipientIsUserPolicy` and a scripted `FakeProvider`. They are not latency or success-rate claims, not a production email system, and not a proof that an arbitrary compromised planner or an allowed-tool exfiltration cannot succeed. The tests that exercise the demo policy are listed in the project README *Threat model & limits*.
 
 ---
 
@@ -239,7 +241,7 @@ Pin exact versions when producing conformance evidence. Read `SECURITY.md` and `
 
 ## 9. Conclusion
 
-Reasoning Kernel is a **reference topology** for tool-using LLM agents: mediate what planners see, quarantine what parsers touch, and commit effects only through a deterministic Gate under host policy and provenance. The public claim stays within what the tree and tests support. A later Owner-authorized Zenodo deposit would create the artifact that, on the author’s site audit rules, may unlock ordinary content cross-references—without inventing a DOI ahead of deposit, and without conflating unrelated publications.
+Reasoning Kernel is a **reference topology** for tool-using LLM agents: mediate what planners see, quarantine what parsers touch, and commit registered effects only through a deterministic Gate under host policy and provenance. The public claim is that this separation **reduces** injection-to-effect risk under stated assumptions—not that injection is unable to cause an unauthorized effect. A later Owner-authorized Zenodo deposit would create the artifact that, on the author’s site audit rules, may unlock ordinary content cross-references—without inventing a DOI ahead of deposit, and without conflating unrelated publications.
 
 ---
 
