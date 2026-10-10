@@ -88,8 +88,8 @@ Reasoner providers: Anthropic, OpenAI, DeepSeek (OpenAI-compatible, reusing the 
 `base_url` — no separate dependency), plus a deterministic `FakeProvider` for key-free tests — all
 behind one interface (`reasoner/base.py`). Configured providers can be exercised through the same
 live contract (`just test-live`). Releases require both DeepSeek and OpenAI qualification.
-Version 0.6.3 defaults to OpenAI `gpt-6.1-sol`, Anthropic `claude-sonnet-5-5`, and DeepSeek
-`deepseek-flash`; see [configuration and qualification](docs/DEVELOPMENT.md#provider-configuration).
+Version 0.6.4 (same defaults as 0.6.3) defaults to OpenAI `gpt-6.1-sol`, Anthropic `claude-sonnet-5-5`,
+and DeepSeek `deepseek-flash`; see [configuration and qualification](docs/DEVELOPMENT.md#provider-configuration).
 The published 0.6.2 wheel additionally passed OpenAI `gpt-5.5` qualification after release, using
 SDK 3.19.2; evidence is attached to the [0.6.2 release](https://github.com/gianlucamazza/reasoning-kernel/releases/tag/v0.6.2).
 Anthropic remains contract-tested without live qualification. These checks do not qualify every
@@ -439,7 +439,7 @@ point to it.
 Until a Zenodo DOI is assigned for the working paper (deposit is on hold pending Owner
 instructions), cite the software by URL and version:
 
-> Mazza, G. (2026). *reasoning-kernel* (Version 0.6.3) [Computer software].
+> Mazza, G. (2026). *reasoning-kernel* (Version 0.6.4) [Computer software].
 > https://github.com/gianlucamazza/reasoning-kernel
 
 See the [working paper](docs/whitepaper/reasoning-kernel-whitepaper.md) for the technical note and
