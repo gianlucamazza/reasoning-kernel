@@ -2,7 +2,7 @@
 
 Every reasoner — privileged planner or quarantined parser, on any provider — is reached only
 through ``LLMProvider.parse``. Swapping a model is a factory change, nothing else. The shape
-mirrors limolane's ``infra/llm/base.py``.
+mirrors a downstream client's ``infra/llm/base.py``.
 """
 
 from __future__ import annotations

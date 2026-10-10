@@ -1,6 +1,6 @@
 """OpenAI-backed provider, with a JSON-mode fallback for non-strict schemas.
 
-Mirrors limolane's ``infra/llm/openai.py``: prefer strict structured output
+Mirrors a downstream client's ``infra/llm/openai.py``: prefer strict structured output
 (``chat.completions.parse``); on a strict-schema 400 fall back to JSON mode with local
 Pydantic validation, so the Plan IR parses identically across providers. Deepseek subclasses
 this (OpenAI-compatible API via ``base_url``). Imported lazily.

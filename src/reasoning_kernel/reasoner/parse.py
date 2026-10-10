@@ -1,7 +1,7 @@
 """Structured-output helpers shared by the role wrappers and by factory-based callers.
 
 ``call_structured`` drives a held provider instance (used by the role wrappers, which is what
-makes the kernel testable with a FakeProvider). ``parse_with_schema`` is the limolane-style
+makes the kernel testable with a FakeProvider). ``parse_with_schema`` is the downstream-client-style
 convenience that resolves a provider + model from settings — used by the demo and live tests.
 """
 
