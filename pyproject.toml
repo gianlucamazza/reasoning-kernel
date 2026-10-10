@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "capability-reasoning-kernel"
-version = "0.6.3"
+version = "0.6.4"
 description = "CaMeL-like Reasoning Kernel reference: capability/provenance gating that reduces injection-to-effect risk under stated assumptions"
 authors = [{ name = "Gianluca Mazza — Venere Labs" }]
 license = { text = "MIT" }
