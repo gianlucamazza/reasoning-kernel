@@ -53,7 +53,7 @@ permissive policy written on top of it.
 Please report privately — do **not** open a public issue for a suspected vulnerability.
 
 - Preferred: open a [GitHub private security advisory](https://github.com/gianlucamazza/reasoning-kernel/security/advisories/new).
-- Or email **homen3@gmail.com**.
+- Or email **info@gianlucamazza.it**.
 
 Include a minimal reproduction (a plan + tool/policy setup that commits an effect that should have been
 blocked), the expected vs. actual behavior, and the affected version/commit. Expect an initial
