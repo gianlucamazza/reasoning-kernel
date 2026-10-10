@@ -11,3 +11,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      pydantic:
+        applies-to: security-updates
+        patterns:
+          - "pydantic"
+          - "pydantic-core"
+          - "pydantic-settings"
