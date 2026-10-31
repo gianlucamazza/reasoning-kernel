@@ -34,7 +34,7 @@ def test_published_check_rejects_unknown_repository(monkeypatch):
 def test_provider_sdk_ranges_exclude_untested_majors():
     project = tomllib.loads(Path("pyproject.toml").read_text())["project"]
     provider_dependencies = {
-        "anthropic>=0.40,<2",
+        "anthropic>=0.40,<3",
         "openai>=1.50,<4",
         "anyio>=4.14.2",
     }

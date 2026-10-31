@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- Raise the optional Anthropic SDK bound from `<2` to `<3` so 2.x is allowed; the
+  release-contract guard still excludes an untested 3.x major. Refs #91.
+
 ### Added
 
 - In-repository working paper (technical note) under [`docs/whitepaper/`](docs/whitepaper/):
